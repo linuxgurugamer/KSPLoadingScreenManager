@@ -1,10 +1,11 @@
-﻿// ***************************************************
+﻿// ***************************************************************************
 // LoadingScreenManager mod for Kerbal Space Program
 // Copyright (C) 2017 @paulprogart
 // Released under CC-BY-NC-SA licence - see https://creativecommons.org/licenses/by-nc-sa/4.0/
 //
 // NOTE: This mod is written using C# 6.0 syntax so it requires Visual Studio 2015 or compatible.
 // NOTE: This mod contains ReSharper annotation attributes (which luckily UnityEngine exposes, so it saves providing a file).
+// ***************************************************************************
 
 using System.Collections.Generic;
 using System.IO;
@@ -57,7 +58,7 @@ namespace LoadingScreenManager
 
         #region Configuration Fields
 
-        // -- Configuration fields and their default values.  (If no default below, uses language default for type.) --
+        // -- Configuration fields and their default values.  (If no default below, uses C# default for type.) --
 
         // TODO: Debug Logging is ENABLED for prerelease... normally will want this false.
         private bool _debugLogging = true;
@@ -309,8 +310,8 @@ namespace LoadingScreenManager
         /// <summary>
         ///     Convenience method to write to the log using an addon-specific prefix.
         /// </summary>
-        /// <param name="format">As per <see cref="string.Format" /></param>
-        /// <param name="args">As per <see cref="string.Format" /></param>
+        /// <param name="format">As per <see cref="string.Format(string, object[])" /></param>
+        /// <param name="args">As per <see cref="string.Format(string, object[])" /></param>
         [StringFormatMethod("format")]
         private void WriteLog(string format, params object[] args)
         {
@@ -320,8 +321,8 @@ namespace LoadingScreenManager
         /// <summary>
         ///     Convenience method to write debug messages to the log using an addon-specific prefix.
         /// </summary>
-        /// <param name="format">As per <see cref="string.Format" /></param>
-        /// <param name="args">As per <see cref="string.Format" /></param>
+        /// <param name="format">As per <see cref="string.Format(string, object[])" /></param>
+        /// <param name="args">As per <see cref="string.Format(string, object[])" /></param>
         [StringFormatMethod("format")]
         private void WriteDebugLog(string format, params object[] args)
         {

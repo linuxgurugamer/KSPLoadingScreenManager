@@ -4,8 +4,12 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-
+#if _64BIT_
+[assembly: AssemblyTitle("KSPLoadingScreenManager x64")]
+#else
 [assembly: AssemblyTitle("KSPLoadingScreenManager")]
+#endif
+
 [assembly: AssemblyDescription("LoadingScreenManager mod for Kerbal Space Program 1.2.2")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
