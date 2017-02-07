@@ -7,6 +7,7 @@
 // NOTE: This mod contains ReSharper annotation attributes (which luckily UnityEngine exposes, so it saves providing a file).
 // ***************************************************************************
 
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -50,7 +51,7 @@ namespace LoadingScreenManager
 
         #region Constants
 
-        private const string Version = "v0.90 [PRERELEASE]";
+        private const string Version = "v0.91 [PRERELEASE]";
         private const string ConfigFileName = "LoadingScreenManager.cfg";
         private const string LogMessageFormat = "[LSM] {0}";
 
@@ -75,6 +76,9 @@ namespace LoadingScreenManager
         private float _fadeInTime = 0.5f;
         private float _fadeOutTime = 0.5f;
         private float _tipTime = 5.0f;
+
+        private string _tipsFile = "";
+        private bool _includeOriginalTips = true;
 
         #endregion
 
@@ -122,6 +126,11 @@ namespace LoadingScreenManager
             var normalLoadScreen = LoadingScreen.Instance.Screens[1];
 
             var screenshotTextures = this.LoadScreenshotTextures();
+            var customTips = this.LoadCustomTips();
+            if (this._includeOriginalTips) customTips.AddRange(normalLoadScreen.tips);
+            normalLoadScreen.tips = customTips.ToArray();
+
+            // TODO: Rename runWithNoScreenshots to something more relevant, since the tips stuff now always runs
             if (this._runWithNoScreenshots || screenshotTextures.Count > 0)
             {
                 if (this._includeOriginalScreens) screenshotTextures.AddRange(normalLoadScreen.screens);
@@ -204,6 +213,40 @@ namespace LoadingScreenManager
             return screenshotTextures;
         }
 
+        [NotNull]
+        private List<string> LoadCustomTips()
+        {
+            var customTips = new List<string>();
+            if (!string.IsNullOrEmpty(this._tipsFile))
+            {
+                var tipsFile = this._tipsFile.Replace('\\', '/');
+                this.WriteLog("Custom tips file:  {0}", tipsFile);
+                try
+                {
+                    using (var streamReader = new StreamReader(this._tipsFile))
+                    {
+                        customTips.AddRange(streamReader.ReadToEnd().Split(new[] { Environment.NewLine },
+                            StringSplitOptions.RemoveEmptyEntries).Select(t => t.Trim()));
+                    }
+                }
+                catch (FileNotFoundException)
+                {
+                    this.WriteLog("!!! WARNING - Tips file not found - not using custom tips");
+                }
+                catch (DirectoryNotFoundException)
+                {
+                    this.WriteLog("!!! WARNING - Tips file directory not found - not using custom tips");
+                }
+                catch (IOException)
+                {
+                    this.WriteLog("!!! WARNING - Tips file I/O problem - not using custom tips");
+                }
+                this.WriteLog("{0} custom tips loaded", customTips.Count);
+            }
+            else this.WriteLog("No custom tips file provided - not using custom tips");
+            return customTips;
+        }
+
         /// <summary>
         ///     Loads the configuration file and sets up default values.
         /// </summary>
@@ -227,6 +270,8 @@ namespace LoadingScreenManager
             configNode.AddValue("fadeInTime", this._fadeInTime);
             configNode.AddValue("fadeOutTime", this._fadeOutTime);
             configNode.AddValue("tipTime", this._tipTime);
+            configNode.AddValue("tipsFile", this._tipsFile);
+            configNode.AddValue("includeOriginalTips", this._includeOriginalTips);
 
             this.WriteDebugLog("... Loading file");
 
@@ -250,9 +295,11 @@ namespace LoadingScreenManager
             configNode.TryGetValue("fadeInTime", ref this._fadeInTime);
             configNode.TryGetValue("fadeOutTime", ref this._fadeOutTime);
             configNode.TryGetValue("tipTime", ref this._tipTime);
+            configNode.TryGetValue("tipsFile", ref this._tipsFile);
+            configNode.TryGetValue("includeOriginalTips", ref this._includeOriginalTips);
 
             this.WriteDebugLog(loadedConfigNode == null
-                ? "... Configuration file not found, saving new one" 
+                ? "... Configuration file not found, saving new one"
                 : "... Resaving configuration file");
             var directoryName = Path.GetDirectoryName(configFilePath);
             if (directoryName != null) Directory.CreateDirectory(directoryName);
