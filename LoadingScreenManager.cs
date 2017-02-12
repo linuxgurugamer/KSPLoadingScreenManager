@@ -13,6 +13,7 @@ using System.IO;
 using System.Linq;
 using JetBrains.Annotations;
 using UnityEngine;
+using Random = System.Random;
 
 namespace LoadingScreenManager
 {
@@ -85,6 +86,7 @@ namespace LoadingScreenManager
 
         #region Configuration Fields
 
+        private readonly Random _random = new Random();
         private readonly List<ImageFolder> _imageFolders = new List<ImageFolder>();
 
         // -- Configuration fields and their default values.  (If no default below, uses C# default for type.) --
@@ -152,25 +154,23 @@ namespace LoadingScreenManager
             // The second screen is the one we want to tweak.  Note we don't need to do anything to the loader.
             var normalLoadScreen = LoadingScreen.Instance.Screens[1];
 
-            var screenshotTextures = this.LoadImageTextures();
             var customTips = this.LoadCustomTips();
             if (this._includeOriginalTips) customTips.AddRange(normalLoadScreen.tips);
             normalLoadScreen.tips = customTips.ToArray();
 
-            // TODO: Rename runWithNoScreenshots to something more relevant, since the tips stuff now always runs
-            if (this._runWithNoScreenshots || screenshotTextures.Count > 0)
+            var filenames = this.GetImageFilenames();
+            if (this._includeOriginalScreens)
             {
-                if (this._includeOriginalScreens) screenshotTextures.AddRange(normalLoadScreen.screens);
-                var screenTextures = screenshotTextures.ToArray();
+                for (var i = 0; i < normalLoadScreen.screens.Length; i++)
+                {
+                    // Identify original by indexes, with a * in front so we know they can't be filenames.
+                    filenames.Add($"*{i}");
+                }
+            }
 
-                // Change the normal loading screen to use the timings and images.
-                // The default is to leave this screen up for 40 minutes, so if we didn't change it the slideshow wouldn't work!
-                normalLoadScreen.displayTime = this._displayTime;
-                normalLoadScreen.fadeInTime = this._fadeInTime;
-                normalLoadScreen.fadeOutTime = this._fadeOutTime;
-                normalLoadScreen.tipTime = this._tipTime;
-                normalLoadScreen.screens = screenTextures;
-
+            // TODO: Rename runWithNoScreenshots to something more relevant, since the tips stuff now always runs
+            if (this._runWithNoScreenshots || filenames.Count > 0)
+            {
                 var newLoaders =
                     new List<LoadingSystem>(this._slidesToAdd + LoadingScreen.Instance.Screens.Count) { logoLoader };
                 var newScreens =
@@ -179,56 +179,22 @@ namespace LoadingScreenManager
                         logoScreen
                     };
 
-                for (var i = 0; i < this._slidesToAdd; i++)
+                var loaderIndex = 1;
+
+                while (newLoaders.Count < this._slidesToAdd && filenames.Count > 0)
                 {
-                    newLoaders.Add(new DummyLoader());
-                    newScreens.Add(new LoadingScreen.LoadingScreenState
+                    var filenameIndex = this._random.Next(filenames.Count);
+                    var filename = filenames[filenameIndex];
+                    filenames.RemoveAt(filenameIndex);
+
+                    Texture2D texture;
+                    // * in front denotes an original image (see above).
+                    if (filename[0] == '*')
                     {
-                        displayTime = this._displayTime,
-                        fadeInTime = this._fadeInTime,
-                        fadeOutTime = this._fadeOutTime,
-                        tipTime = this._tipTime,
-                        screens = screenTextures,
-                        tips = normalLoadScreen.tips
-                    });
-                }
-
-                // Copy 
-                newLoaders.AddRange(LoadingScreen.Instance.loaders.Skip(1));
-                newScreens.AddRange(LoadingScreen.Instance.Screens.Skip(1));
-
-                LoadingScreen.Instance.loaders = newLoaders;
-                LoadingScreen.Instance.Screens = newScreens;
-                this.WriteDebugLog("{0} loading screens set (including existing)", newScreens.Count);
-            }
-        }
-
-        /// <summary>
-        ///     Loads the images from disk.
-        /// </summary>
-        /// <returns>List of Unity textures - will be empty on error or if no files exist.</returns>
-        [NotNull]
-        private List<Texture2D> LoadImageTextures()
-        {
-            var textures = new List<Texture2D>();
-            foreach (var imageFolder in this._imageFolders)
-            {
-                var searchOption = imageFolder.ignoreSubfolders ? SearchOption.TopDirectoryOnly : SearchOption.AllDirectories;
-
-                // Unity always uses a forward slash in paths so these must be changed on backslash OSs (e.g. Windows).
-                var path = Path.Combine(Path.GetDirectoryName(Application.dataPath) ?? "", imageFolder.path).Replace('\\', '/');
-
-                // TODO: Clean up logging for multi-folder.
-                this.WriteLog("Image path:  {0}", path);
-
-                // Can only use one mask at a time so we have to iterate.
-                foreach (var filenames in imageFolder.fileMasks
-                    .Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries)
-                    .Select(fm => Directory.GetFiles(path, fm.Trim(), searchOption) ?? new string[0]))
-                {
-                    this.WriteLog("{0} screenshot files found", filenames.Length);
-
-                    foreach (var filename in filenames.Select(fn => fn.Replace('\\', '/')))
+                        this.WriteDebugLog("Using original image:  Index {0}", filename);
+                        texture = normalLoadScreen.screens[int.Parse(filename.Substring(1))];
+                    }
+                    else
                     {
                         this.WriteDebugLog("Loading screenshot file:  {0}", filename);
                         using (var fileStream = new FileStream(filename, FileMode.Open))
@@ -239,15 +205,68 @@ namespace LoadingScreenManager
                             this.WriteDebugLog("... File read");
 
                             // This is right out of the Unity documentation for Texture2D.LoadImage().
-                            var texture = new Texture2D(2, 2);
-                            if (texture.LoadImage(bytes)) textures.Add(texture);
-                            else this.WriteLog("!!! ERROR - Screenshot cannot be loaded: {0}", filename);
+                            texture = new Texture2D(2, 2);
+                            if (!texture.LoadImage(bytes))
+                            {
+                                this.WriteLog("!!! ERROR - Image file cannot be loaded: {0}", filename);
+                                continue;
+                            }
                         }
                     }
+
+                    var loader = loaderIndex < LoadingScreen.Instance.loaders.Count
+                        ? LoadingScreen.Instance.loaders[loaderIndex++] : new DummyLoader();
+
+                    // All normal loading screens (except the logo of course) also get changed to use the timings and images.
+                    // The default on the main screen is 40 minutes, so if we didn't do this the slideshow wouldn't work!
+                    var screen = new LoadingScreen.LoadingScreenState
+                    {
+                        displayTime = this._displayTime,
+                        fadeInTime = this._fadeInTime,
+                        fadeOutTime = this._fadeOutTime,
+                        tipTime = this._tipTime,
+                        screens = new[] { texture },
+                        tips = normalLoadScreen.tips
+                    };
+
+                    newLoaders.Add(loader);
+                    newScreens.Add(screen);
                 }
+
+                LoadingScreen.Instance.loaders = newLoaders;
+                LoadingScreen.Instance.Screens = newScreens;
+                this.WriteDebugLog("{0} loading screens set (including existing)", newScreens.Count);
+            }
+        }
+
+        [NotNull]
+        private List<string> GetImageFilenames()
+        {
+            var filenames = new List<string>();
+
+            var dataPath = Path.GetDirectoryName(Application.dataPath) ?? "";
+
+            foreach (var imageFolder in this._imageFolders)
+            {
+                var searchOption = imageFolder.ignoreSubfolders ? SearchOption.TopDirectoryOnly : SearchOption.AllDirectories;
+
+                // Unity always uses a forward slash in paths so these must be changed on backslash OSs (e.g. Windows).
+                var path = Path.Combine(dataPath, imageFolder.path).Replace('\\', '/');
+
+                // TODO: Clean up logging for multi-folder.
+                this.WriteLog("Image path:  {0}", path);
+
+                // Can only use one mask at a time so we have to do multiple GetFiles() calls.
+                // All this does is split up the filemasks and then making the call for each of them with the appropriate file
+                // masks.  SelectMany just lets us do it all at once without having to use a loop.
+                filenames.AddRange(imageFolder.fileMasks.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries)
+                    .SelectMany(fm => Directory.GetFiles(path, fm.Trim(), searchOption) ?? new string[0])
+                    .Select(fn => fn.Replace('\\', '/')));
             }
 
-            return textures;
+            this.WriteLog("{0} screenshot files found", filenames.Count);
+
+            return filenames;
         }
 
         [NotNull]
