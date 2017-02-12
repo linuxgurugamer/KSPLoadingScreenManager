@@ -26,6 +26,29 @@ namespace LoadingScreenManager
     [UsedImplicitly]
     public class LoadingScreenManager : MonoBehaviour
     {
+        #region Nested Structs
+
+        /// <summary>
+        ///     Holds the configuration for an image folder definition.
+        /// </summary>
+        private struct ImageFolder
+        {
+            /// <summary>
+            ///     Path relative to the KSP installation folder, including trailing / (slash).
+            /// </summary>
+            public string path;
+            /// <summary>
+            ///     File masks (e.g. *.jpg).  Multiples are allowed if separated by ; (semicolon).
+            /// </summary>
+            public string fileMasks;
+            /// <summary>
+            ///     If true, searches only the given path and not any subfolders within it.
+            /// </summary>
+            public bool ignoreSubfolders;
+        }
+
+        #endregion
+
         #region Nested Classses
 
         /// <summary>
@@ -55,9 +78,14 @@ namespace LoadingScreenManager
         private const string ConfigFileName = "LoadingScreenManager.cfg";
         private const string LogMessageFormat = "[LSM] {0}";
 
+        private const string DefaultPath = "Screenshots/";
+        private const string DefaultFileMasks = "*.png;*.jpg";
+
         #endregion
 
         #region Configuration Fields
+
+        private readonly List<ImageFolder> _imageFolders = new List<ImageFolder>();
 
         // -- Configuration fields and their default values.  (If no default below, uses C# default for type.) --
 
@@ -66,7 +94,6 @@ namespace LoadingScreenManager
         private bool _dumpTips;
         private bool _dumpScreens;
 
-        private string _screenshotFolder = "Screenshots/";
         private int _slidesToAdd = 50;
         private bool _includeOriginalScreens = true;
         private bool _runWithNoScreenshots;
@@ -125,7 +152,7 @@ namespace LoadingScreenManager
             // The second screen is the one we want to tweak.  Note we don't need to do anything to the loader.
             var normalLoadScreen = LoadingScreen.Instance.Screens[1];
 
-            var screenshotTextures = this.LoadScreenshotTextures();
+            var screenshotTextures = this.LoadImageTextures();
             var customTips = this.LoadCustomTips();
             if (this._includeOriginalTips) customTips.AddRange(normalLoadScreen.tips);
             normalLoadScreen.tips = customTips.ToArray();
@@ -177,40 +204,50 @@ namespace LoadingScreenManager
         }
 
         /// <summary>
-        ///     Loads the screenshot images from disk.
+        ///     Loads the images from disk.
         /// </summary>
-        /// <returns>List of Unity screenshot textures - will be empty on error or if no files exist.</returns>
+        /// <returns>List of Unity textures - will be empty on error or if no files exist.</returns>
         [NotNull]
-        private List<Texture2D> LoadScreenshotTextures()
+        private List<Texture2D> LoadImageTextures()
         {
-            // Unity always uses a forward slash in paths so these must be changed on backslash OSs (e.g. Windows).
-            var screenshotPath =
-                Path.Combine(Path.GetDirectoryName(Application.dataPath) ?? "", this._screenshotFolder).Replace('\\', '/');
-            this.WriteLog("Screenshot path:  {0}", screenshotPath);
-
-            var screenshotFilenames =
-                Directory.GetFiles(screenshotPath, "*", SearchOption.AllDirectories) ?? new string[0];
-            var screenshotTextures = new List<Texture2D>(screenshotFilenames.Length);
-            this.WriteLog("{0} screenshot files found", screenshotFilenames.Length);
-
-            foreach (var filename in screenshotFilenames.Select(fn => fn.Replace('\\', '/')))
+            var textures = new List<Texture2D>();
+            foreach (var imageFolder in this._imageFolders)
             {
-                this.WriteDebugLog("Loading screenshot file:  {0}", filename);
-                using (var fileStream = new FileStream(filename, FileMode.Open))
-                {
-                    this.WriteDebugLog("... File opened");
-                    var bytes = new byte[fileStream.Length];
-                    fileStream.Read(bytes, 0, (int) fileStream.Length);
-                    this.WriteDebugLog("... File read");
+                var searchOption = imageFolder.ignoreSubfolders ? SearchOption.TopDirectoryOnly : SearchOption.AllDirectories;
 
-                    // This is right out of the Unity documentation for Texture2D.LoadImage().
-                    var texture = new Texture2D(2, 2);
-                    if (texture.LoadImage(bytes)) screenshotTextures.Add(texture);
-                    else this.WriteLog("!!! ERROR - Screenshot cannot be loaded: {0}", filename);
+                // Unity always uses a forward slash in paths so these must be changed on backslash OSs (e.g. Windows).
+                var path = Path.Combine(Path.GetDirectoryName(Application.dataPath) ?? "", imageFolder.path).Replace('\\', '/');
+
+                // TODO: Clean up logging for multi-folder.
+                this.WriteLog("Image path:  {0}", path);
+
+                // Can only use one mask at a time so we have to iterate.
+                foreach (var filenames in imageFolder.fileMasks
+                    .Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries)
+                    .Select(fm => Directory.GetFiles(path, fm.Trim(), searchOption) ?? new string[0]))
+                {
+                    this.WriteLog("{0} screenshot files found", filenames.Length);
+
+                    foreach (var filename in filenames.Select(fn => fn.Replace('\\', '/')))
+                    {
+                        this.WriteDebugLog("Loading screenshot file:  {0}", filename);
+                        using (var fileStream = new FileStream(filename, FileMode.Open))
+                        {
+                            this.WriteDebugLog("... File opened");
+                            var bytes = new byte[fileStream.Length];
+                            fileStream.Read(bytes, 0, (int) fileStream.Length);
+                            this.WriteDebugLog("... File read");
+
+                            // This is right out of the Unity documentation for Texture2D.LoadImage().
+                            var texture = new Texture2D(2, 2);
+                            if (texture.LoadImage(bytes)) textures.Add(texture);
+                            else this.WriteLog("!!! ERROR - Screenshot cannot be loaded: {0}", filename);
+                        }
+                    }
                 }
             }
 
-            return screenshotTextures;
+            return textures;
         }
 
         [NotNull]
@@ -257,12 +294,15 @@ namespace LoadingScreenManager
             var configFilePath = Path.Combine(assembly.dataPath, ConfigFileName).Replace('\\', '/');
             this.WriteLog("Loading configuration file:  {0}", configFilePath);
 
+            // These hold settings from the prerelease that have changed in name or structure.
+            var screenshotFolder = DefaultPath;
+
             // Setup a ConfigNode with the desired defaults (which were set in the field declarations).
-            var configNode = new ConfigNode("LoadingScreenManager");
+            var configNode = new ConfigNode(); //("LoadingScreenManager");
             configNode.AddValue("debugLogging", this._debugLogging);
             configNode.AddValue("dumpScreens", this._dumpScreens);
             configNode.AddValue("dumpTips", this._dumpTips);
-            configNode.AddValue("screenshotFolder", this._screenshotFolder);
+            configNode.AddValue("screenshotFolder", screenshotFolder);
             configNode.AddValue("slidesToAdd", this._slidesToAdd);
             configNode.AddValue("includeOriginalScreens", this._includeOriginalScreens);
             configNode.AddValue("runWithNoScreenshots", this._runWithNoScreenshots);
@@ -279,15 +319,25 @@ namespace LoadingScreenManager
             // The advantage of doing it this way is that at the end we always end up with a full config file that can be saved,
             // which is handy for version upgrades or if the user has deleted settings.
             var loadedConfigNode = ConfigNode.Load(configFilePath);
-            loadedConfigNode?.CopyTo(configNode, true);
-
-            this.WriteDebugLog("... Processing values");
+            if (loadedConfigNode != null)
+            {
+                this.WriteDebugLog("... File loaded");
+                loadedConfigNode.CopyTo(configNode, true);
+                // CopyTo doesn't seem to deal with multiple nodes so it'll only copy one.  Thus, we have to copy them manually.
+                configNode.RemoveNodes("FOLDER");
+                var loadedFolderConfigNodes = loadedConfigNode.GetNodes("FOLDER") ?? new ConfigNode[0];
+                foreach (var loadedFolderConfigNode in loadedFolderConfigNodes)
+                {
+                    configNode.AddNode(loadedFolderConfigNode);
+                }
+            }
+            else this.WriteDebugLog("... No file found, using default configuration");
 
             // Now pull out values.  
             configNode.TryGetValue("debugLogging", ref this._debugLogging);
             configNode.TryGetValue("dumpScreens", ref this._dumpScreens);
             configNode.TryGetValue("dumpTips", ref this._dumpTips);
-            configNode.TryGetValue("screenshotFolder", ref this._screenshotFolder);
+            configNode.TryGetValue("screenshotFolder", ref screenshotFolder);
             configNode.TryGetValue("slidesToAdd", ref this._slidesToAdd);
             configNode.TryGetValue("includeOriginalScreens", ref this._includeOriginalScreens);
             configNode.TryGetValue("runWithNoScreenshots", ref this._runWithNoScreenshots);
@@ -298,9 +348,35 @@ namespace LoadingScreenManager
             configNode.TryGetValue("tipsFile", ref this._tipsFile);
             configNode.TryGetValue("includeOriginalTips", ref this._includeOriginalTips);
 
-            this.WriteDebugLog(loadedConfigNode == null
-                ? "... Configuration file not found, saving new one"
-                : "... Resaving configuration file");
+            var folderConfigNodes = configNode.GetNodes("FOLDER");
+
+            // If no folders defined, add a subnode for a default folder.
+            if (folderConfigNodes == null || folderConfigNodes.Length == 0)
+            {
+                var folderConfigNode = new ConfigNode("FOLDER");
+                // Use the prerelease setting, which will have the normal default if it's not found.
+                folderConfigNode.AddValue("path", screenshotFolder);
+                folderConfigNode.AddValue("fileMasks", DefaultFileMasks);
+                folderConfigNode.AddValue("ignoreSubfolders", default(bool));
+                configNode.AddNode(folderConfigNode);
+                folderConfigNodes = new[] { folderConfigNode };
+            }
+
+            // Translate the folder config nodes into a more convenient form.
+            foreach (var folderConfigNode in folderConfigNodes)
+            {
+                var imageFolder = new ImageFolder();
+                folderConfigNode.TryGetValue("path", ref imageFolder.path);
+                folderConfigNode.TryGetValue("fileMasks", ref imageFolder.fileMasks);
+                folderConfigNode.TryGetValue("ignoreSubfolders", ref imageFolder.ignoreSubfolders);
+                this._imageFolders.Add(imageFolder);
+            }
+
+            // Remove legacy settings.
+            configNode.RemoveValue("screenshotFolder");
+
+            // Done, now save the modified configuration back to disk.
+            this.WriteDebugLog("... Saving configuration file:\n{0}", configNode);
             var directoryName = Path.GetDirectoryName(configFilePath);
             if (directoryName != null) Directory.CreateDirectory(directoryName);
             configNode.Save(configFilePath);
