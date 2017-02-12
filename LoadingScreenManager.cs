@@ -96,9 +96,9 @@ namespace LoadingScreenManager
         private bool _dumpTips;
         private bool _dumpScreens;
 
-        private int _slidesToAdd = 50;
+        private int _totalSlides = 20;
         private bool _includeOriginalScreens = true;
-        private bool _runWithNoScreenshots;
+        private bool _forceSlideshowWithNoImageFiles;
 
         // These are all in seconds.
         private float _displayTime = 5.0f;
@@ -126,7 +126,6 @@ namespace LoadingScreenManager
             if (this._debugLogging) this.WriteStartupDebuggingInfo();
 
             this.LoadConfig();
-
             this.ModifyLoadingScreen();
 
             this.WriteLog("LoadingScreenManager {0} finished", Version);
@@ -154,11 +153,12 @@ namespace LoadingScreenManager
             // The second screen is the one we want to tweak.  Note we don't need to do anything to the loader.
             var normalLoadScreen = LoadingScreen.Instance.Screens[1];
 
+            var filenames = this.GetImageFilenames();
+
             var customTips = this.LoadCustomTips();
             if (this._includeOriginalTips) customTips.AddRange(normalLoadScreen.tips);
-            normalLoadScreen.tips = customTips.ToArray();
+            var tips = customTips.ToArray();
 
-            var filenames = this.GetImageFilenames();
             if (this._includeOriginalScreens)
             {
                 for (var i = 0; i < normalLoadScreen.screens.Length; i++)
@@ -168,27 +168,24 @@ namespace LoadingScreenManager
                 }
             }
 
-            // TODO: Rename runWithNoScreenshots to something more relevant, since the tips stuff now always runs
-            if (this._runWithNoScreenshots || filenames.Count > 0)
+            if (this._forceSlideshowWithNoImageFiles || filenames.Count > 0)
             {
-                var newLoaders =
-                    new List<LoadingSystem>(this._slidesToAdd + LoadingScreen.Instance.Screens.Count) { logoLoader };
-                var newScreens =
-                    new List<LoadingScreen.LoadingScreenState>(this._slidesToAdd + LoadingScreen.Instance.loaders.Count)
-                    {
-                        logoScreen
-                    };
+                var newLoaders = new List<LoadingSystem>(this._totalSlides + 1) { logoLoader };
+                var newScreens = new List<LoadingScreen.LoadingScreenState>(this._totalSlides + 1) { logoScreen };
 
+                // totalSlides setting does not include the logo so add 1 since we included it above.
+                var totalSlides = this._totalSlides + 1;
+                // Start at 1 to ignore the logo at 0.
                 var loaderIndex = 1;
 
-                while (newLoaders.Count < this._slidesToAdd && filenames.Count > 0)
+                while (newLoaders.Count < totalSlides && filenames.Count > 0)
                 {
                     var filenameIndex = this._random.Next(filenames.Count);
                     var filename = filenames[filenameIndex];
                     filenames.RemoveAt(filenameIndex);
 
                     Texture2D texture;
-                    // * in front denotes an original image (see above).
+                    // A * in front of a filename denotes an original image (see above).
                     if (filename[0] == '*')
                     {
                         this.WriteDebugLog("Using original image:  Index {0}", filename);
@@ -196,7 +193,7 @@ namespace LoadingScreenManager
                     }
                     else
                     {
-                        this.WriteDebugLog("Loading screenshot file:  {0}", filename);
+                        this.WriteDebugLog("Loading image file:  {0}", filename);
                         using (var fileStream = new FileStream(filename, FileMode.Open))
                         {
                             this.WriteDebugLog("... File opened");
@@ -214,6 +211,12 @@ namespace LoadingScreenManager
                         }
                     }
 
+                    // TODO: Adding to start temporarily until dynamic detection refactor...
+                    // Add original loaders at the end.
+                    // The reason we put our loaders first is that, for some reason I haven't been able to figure out, they will
+                    // disrupt the progress bar partway through, but at least if they're at the end the progress bar will end up
+                    // going to 100% eventually.  If we just tacked them onto the end the progress bar would finish at like 20%,
+                    // which would look bad to the user.
                     var loader = loaderIndex < LoadingScreen.Instance.loaders.Count
                         ? LoadingScreen.Instance.loaders[loaderIndex++] : new DummyLoader();
 
@@ -226,16 +229,25 @@ namespace LoadingScreenManager
                         fadeOutTime = this._fadeOutTime,
                         tipTime = this._tipTime,
                         screens = new[] { texture },
-                        tips = normalLoadScreen.tips
+                        tips = tips
                     };
 
                     newLoaders.Add(loader);
                     newScreens.Add(screen);
                 }
 
+                Debug.Assert(loaderIndex == LoadingScreen.Instance.loaders.Count);
+
                 LoadingScreen.Instance.loaders = newLoaders;
                 LoadingScreen.Instance.Screens = newScreens;
-                this.WriteDebugLog("{0} loading screens set (including existing)", newScreens.Count);
+                this.WriteDebugLog("{0} loading screens set{1}", newScreens.Count,
+                    this._includeOriginalScreens ? " (including originals)" : "");
+
+                if (newScreens.Count < totalSlides)
+                {
+                    this.WriteLog("** WARNING:  Not enough images available ({0}) to meet requested number of slides ({1}).",
+                        newScreens.Count - 1, totalSlides - 1);
+                }
             }
         }
 
@@ -243,8 +255,9 @@ namespace LoadingScreenManager
         private List<string> GetImageFilenames()
         {
             var filenames = new List<string>();
-
             var dataPath = Path.GetDirectoryName(Application.dataPath) ?? "";
+
+            this.WriteLog("Finding image files...");
 
             foreach (var imageFolder in this._imageFolders)
             {
@@ -252,19 +265,26 @@ namespace LoadingScreenManager
 
                 // Unity always uses a forward slash in paths so these must be changed on backslash OSs (e.g. Windows).
                 var path = Path.Combine(dataPath, imageFolder.path).Replace('\\', '/');
-
-                // TODO: Clean up logging for multi-folder.
-                this.WriteLog("Image path:  {0}", path);
-
                 // Can only use one mask at a time so we have to do multiple GetFiles() calls.
                 // All this does is split up the filemasks and then making the call for each of them with the appropriate file
                 // masks.  SelectMany just lets us do it all at once without having to use a loop.
                 filenames.AddRange(imageFolder.fileMasks.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries)
                     .SelectMany(fm => Directory.GetFiles(path, fm.Trim(), searchOption) ?? new string[0])
                     .Select(fn => fn.Replace('\\', '/')));
+
+                this.WriteLog("... Added image path:  {0}", path);
             }
 
-            this.WriteLog("{0} screenshot files found", filenames.Count);
+            if (this._debugLogging)
+            {
+                foreach (var filename in filenames)
+                {
+                    this.WriteDebugLog("... Image file: {0}", filename);
+
+                }
+            }
+
+            this.WriteLog("{0} image files found", filenames.Count);
 
             return filenames;
         }
@@ -313,18 +333,17 @@ namespace LoadingScreenManager
             var configFilePath = Path.Combine(assembly.dataPath, ConfigFileName).Replace('\\', '/');
             this.WriteLog("Loading configuration file:  {0}", configFilePath);
 
-            // These hold settings from the prerelease that have changed in name or structure.
+            // Settings from prerelease that's changed in structure.
             var screenshotFolder = DefaultPath;
 
             // Setup a ConfigNode with the desired defaults (which were set in the field declarations).
-            var configNode = new ConfigNode(); //("LoadingScreenManager");
+            var configNode = new ConfigNode();
             configNode.AddValue("debugLogging", this._debugLogging);
             configNode.AddValue("dumpScreens", this._dumpScreens);
             configNode.AddValue("dumpTips", this._dumpTips);
-            configNode.AddValue("screenshotFolder", screenshotFolder);
-            configNode.AddValue("slidesToAdd", this._slidesToAdd);
+            configNode.AddValue("totalSlides", this._totalSlides);
+            configNode.AddValue("forceSlideshowWithNoImageFiles", this._forceSlideshowWithNoImageFiles);
             configNode.AddValue("includeOriginalScreens", this._includeOriginalScreens);
-            configNode.AddValue("runWithNoScreenshots", this._runWithNoScreenshots);
             configNode.AddValue("displayTime", this._displayTime);
             configNode.AddValue("fadeInTime", this._fadeInTime);
             configNode.AddValue("fadeOutTime", this._fadeOutTime);
@@ -352,14 +371,18 @@ namespace LoadingScreenManager
             }
             else this.WriteDebugLog("... No file found, using default configuration");
 
-            // Now pull out values.  
+            // Get legacy settings in case of old version, they will be upgraded.
+            configNode.TryGetValue("screenshotFolder", ref screenshotFolder);
+            configNode.TryGetValue("slidesToAdd", ref this._totalSlides);
+            configNode.TryGetValue("runWithNoScreenshots", ref this._forceSlideshowWithNoImageFiles);
+
+            // Now pull out values.
             configNode.TryGetValue("debugLogging", ref this._debugLogging);
             configNode.TryGetValue("dumpScreens", ref this._dumpScreens);
             configNode.TryGetValue("dumpTips", ref this._dumpTips);
-            configNode.TryGetValue("screenshotFolder", ref screenshotFolder);
-            configNode.TryGetValue("slidesToAdd", ref this._slidesToAdd);
+            configNode.TryGetValue("totalSlides", ref this._totalSlides);
+            configNode.TryGetValue("forceSlideshowWithNoImageFiles", ref this._forceSlideshowWithNoImageFiles);
             configNode.TryGetValue("includeOriginalScreens", ref this._includeOriginalScreens);
-            configNode.TryGetValue("runWithNoScreenshots", ref this._runWithNoScreenshots);
             configNode.TryGetValue("displayTime", ref this._displayTime);
             configNode.TryGetValue("fadeInTime", ref this._fadeInTime);
             configNode.TryGetValue("fadeOutTime", ref this._fadeOutTime);
@@ -393,6 +416,8 @@ namespace LoadingScreenManager
 
             // Remove legacy settings.
             configNode.RemoveValue("screenshotFolder");
+            configNode.RemoveValue("slidesToAdd");
+            configNode.RemoveValue("runWithNoScreenshots");
 
             // Done, now save the modified configuration back to disk.
             this.WriteDebugLog("... Saving configuration file:\n{0}", configNode);
