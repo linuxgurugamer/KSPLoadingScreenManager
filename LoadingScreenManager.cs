@@ -126,7 +126,7 @@ namespace LoadingScreenManager
             if (this._debugLogging) this.WriteStartupDebuggingInfo();
 
             this.LoadConfig();
-            this.ModifyLoadingScreen();
+            this.ModifyLoadingScreens();
 
             this.WriteLog("LoadingScreenManager {0} finished", Version);
         }
@@ -138,30 +138,70 @@ namespace LoadingScreenManager
         /// <summary>
         ///     The core of the program that replaces the default LoadingScreen information with our customizations.
         /// </summary>
-        private void ModifyLoadingScreen()
+        private void ModifyLoadingScreens()
         {
             // We are going to rebuild the loaders and screens, so first grab the existing ones.
-            // TODO: ID logo & normal dynamically in case other mods or future versions change the count/order...
 
-            // The first loader/screen that shows the SQUAD logo.
-            // *** IMPORTANT NOTE ***
-            // Under KSP forum rules, mods may not modify the in-games logos, so please don't submit anything that makes
-            // changes to these.  All we are doing here is saving them so we can add them back later.
-            var logoLoader = LoadingScreen.Instance.loaders[0];
-            var logoScreen = LoadingScreen.Instance.Screens[0];
+            // The logic is built to cope if mods and/or a future version change the screen types and/or ordering.  It's very
+            // YAGNI to do this but I wanted the exercise of it and it wasn't too much effort.
+            // However, it expects there to be exactly one screen for every loader.  (Too many cases otherwise...)
+            if (LoadingScreen.Instance.loaders == null || LoadingScreen.Instance.Screens == null ||
+                LoadingScreen.Instance.loaders.Count != LoadingScreen.Instance.Screens.Count)
+            {
+                this.WriteLog("!!! ERROR - Unexpected Loading Screen initial state.\n" +
+                              "Likely some mod has messed with things, or the KSP version is incompatible - aborting.");
+                ScreenMessages.PostScreenMessage("LoadingScreenManager *DISABLED* - unexpected initial state",
+                    15.0f, ScreenMessageStyle.UPPER_CENTER);
+                return;
+            }
 
-            // The second screen is the one we want to tweak.  Note we don't need to do anything to the loader.
-            var normalLoadScreen = LoadingScreen.Instance.Screens[1];
+            var gameDatabaseIndex = -1;
+            LoadingSystem gameDatabaseLoader = null;
+            LoadingScreen.LoadingScreenState gameDatabaseScreen = null;
+            LoadingScreen.LoadingScreenState firstModifiableScreen = null;
+
+            // It's possible something could have removed all loaders (in which case we'll just add ours later).
+            if (LoadingScreen.Instance.loaders.Count > 0)
+            {
+                // The GameDatabase loader and its accompanying screen is the one that shows the SQUAD logo.  Normally it's 1st,
+                // but we find it dynamically in case some mod behaved badly and moved it.
+                // *** IMPORTANT NOTE ***
+                // Under KSP forum rules, mods may not modify the in-games logos, so please don't submit anything that makes
+                // changes to these.  All we are doing here is saving them so we can add them back later.
+                gameDatabaseIndex = LoadingScreen.Instance.loaders.FindIndex(l => l is GameDatabase);
+                if (gameDatabaseIndex >= 0)
+                {
+                    if (gameDatabaseIndex != 0) this.WriteLog("** WARNING - Game Database Loader is not where expected.");
+                    gameDatabaseLoader = LoadingScreen.Instance.loaders[gameDatabaseIndex];
+                    gameDatabaseScreen = LoadingScreen.Instance.Screens[gameDatabaseIndex];
+                }
+                else this.WriteLog("** WARNING - Game Database Loader is not present.");
+
+                // The "normal" loading screen after the logo is supposed to be second, but a mod could have inserted one.
+                // So the first screen that isn't the logo is the one we can modify.
+                // Note that we just assume this screen has the "original" tips and screens.  Could look for PartLoader to find
+                // which index it is, but we don't need to be that strict.
+
+                // Unless the *only* loader is the GameDatabase then there has to be a modifiable screen, and the only time it
+                // can't be at index 0 is if the GameDatabase is (which is actually the norm).
+                if (LoadingScreen.Instance.loaders.Count > 1 || gameDatabaseIndex < 0)
+                {
+                    var firstModifiableIndex = gameDatabaseIndex == 0 ? 1 : 0;
+                    firstModifiableScreen = LoadingScreen.Instance.Screens[firstModifiableIndex];
+                }
+                if (firstModifiableScreen == null) this.WriteLog("** WARNING - No existing modifiable loaders.");
+            }
+            else this.WriteLog("** WARNING - No existing loaders found.");
 
             var filenames = this.GetImageFilenames();
 
             var customTips = this.LoadCustomTips();
-            if (this._includeOriginalTips) customTips.AddRange(normalLoadScreen.tips);
+            if (this._includeOriginalTips && firstModifiableScreen != null) customTips.AddRange(firstModifiableScreen.tips);
             var tips = customTips.ToArray();
 
-            if (this._includeOriginalScreens)
+            if (this._includeOriginalScreens && firstModifiableScreen != null)
             {
-                for (var i = 0; i < normalLoadScreen.screens.Length; i++)
+                for (var i = 0; i < firstModifiableScreen.screens.Length; i++)
                 {
                     // Identify original by indexes, with a * in front so we know they can't be filenames.
                     filenames.Add($"*{i}");
@@ -170,15 +210,9 @@ namespace LoadingScreenManager
 
             if (this._forceSlideshowWithNoImageFiles || filenames.Count > 0)
             {
-                var newLoaders = new List<LoadingSystem>(this._totalSlides + 1) { logoLoader };
-                var newScreens = new List<LoadingScreen.LoadingScreenState>(this._totalSlides + 1) { logoScreen };
+                var newScreens = new List<LoadingScreen.LoadingScreenState>(this._totalSlides + 1);
 
-                // totalSlides setting does not include the logo so add 1 since we included it above.
-                var totalSlides = this._totalSlides + 1;
-                // Start at 1 to ignore the logo at 0.
-                var loaderIndex = 1;
-
-                while (newLoaders.Count < totalSlides && filenames.Count > 0)
+                while (newScreens.Count < this._totalSlides && filenames.Count > 0)
                 {
                     var filenameIndex = this._random.Next(filenames.Count);
                     var filename = filenames[filenameIndex];
@@ -189,7 +223,10 @@ namespace LoadingScreenManager
                     if (filename[0] == '*')
                     {
                         this.WriteDebugLog("Using original image:  Index {0}", filename);
-                        texture = normalLoadScreen.screens[int.Parse(filename.Substring(1))];
+                        Debug.Assert(firstModifiableScreen != null);
+                        // ReSharper doesn't recognize Unity's Assert() and I don't want to bother with external annotations...
+                        // ReSharper disable once PossibleNullReferenceException
+                        texture = firstModifiableScreen.screens[int.Parse(filename.Substring(1))];
                     }
                     else
                     {
@@ -211,16 +248,7 @@ namespace LoadingScreenManager
                         }
                     }
 
-                    // TODO: Adding to start temporarily until dynamic detection refactor...
-                    // Add original loaders at the end.
-                    // The reason we put our loaders first is that, for some reason I haven't been able to figure out, they will
-                    // disrupt the progress bar partway through, but at least if they're at the end the progress bar will end up
-                    // going to 100% eventually.  If we just tacked them onto the end the progress bar would finish at like 20%,
-                    // which would look bad to the user.
-                    var loader = loaderIndex < LoadingScreen.Instance.loaders.Count
-                        ? LoadingScreen.Instance.loaders[loaderIndex++] : new DummyLoader();
-
-                    // All normal loading screens (except the logo of course) also get changed to use the timings and images.
+                    // All normal loading screens (except the logo of course) get rebuilt to use the timings and images.
                     // The default on the main screen is 40 minutes, so if we didn't do this the slideshow wouldn't work!
                     var screen = new LoadingScreen.LoadingScreenState
                     {
@@ -231,22 +259,48 @@ namespace LoadingScreenManager
                         screens = new[] { texture },
                         tips = tips
                     };
-
-                    newLoaders.Add(loader);
                     newScreens.Add(screen);
                 }
 
-                Debug.Assert(loaderIndex == LoadingScreen.Instance.loaders.Count);
+                // Existing loaders are saved to be added at the end.  See below for why.
+                var existingLoaders = new List<LoadingSystem>(LoadingScreen.Instance.loaders.Count);
+                for (var i = 0; i < LoadingScreen.Instance.loaders.Count; i++)
+                {
+                    if (i != gameDatabaseIndex) existingLoaders.Add(LoadingScreen.Instance.loaders[i++]);
+                }
+                var totalDummyLoaders = this._totalSlides - existingLoaders.Count;
+
+                var newLoaders = new List<LoadingSystem>(this._totalSlides + 1);
+                for (var i = 0; i < totalDummyLoaders; i++)
+                {
+                    newLoaders.Add(new DummyLoader());
+                }
+
+                // Add the logo stuff to the start.  Note if some mod had moved it, this will get undone.
+                if (gameDatabaseLoader != null)
+                {
+                    newLoaders.Insert(0, gameDatabaseLoader);
+                    newScreens.Insert(0, gameDatabaseScreen);
+                }
+
+                // Add existing loaders at the end.
+                // The reason we put our loaders first is that, for some reason I haven't been able to figure out, they will
+                // disrupt the progress bar partway through, but at least if they're at the end the progress bar will end up
+                // going to 100% eventually.  If we just tacked them onto the end the progress bar would finish at like 20%,
+                // which would look bad to the user.
+                newLoaders.AddRange(existingLoaders);
 
                 LoadingScreen.Instance.loaders = newLoaders;
                 LoadingScreen.Instance.Screens = newScreens;
-                this.WriteDebugLog("{0} loading screens set{1}", newScreens.Count,
-                    this._includeOriginalScreens ? " (including originals)" : "");
 
-                if (newScreens.Count < totalSlides)
+                // The logo is not counted as a slide.
+                var slideCount = gameDatabaseIndex >= 0 ? newScreens.Count - 1 : newScreens.Count;
+                this.WriteDebugLog("{0} loading screens set{1}", slideCount, gameDatabaseIndex >= 0 ? " (including logo)" : "");
+
+                if (slideCount < this._totalSlides)
                 {
                     this.WriteLog("** WARNING:  Not enough images available ({0}) to meet requested number of slides ({1}).",
-                        newScreens.Count - 1, totalSlides - 1);
+                        slideCount, this._totalSlides);
                 }
             }
         }
