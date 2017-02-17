@@ -396,8 +396,8 @@ namespace LoadingScreenManager
             configNode.AddValue("dumpScreens", this._dumpScreens);
             configNode.AddValue("dumpTips", this._dumpTips);
             configNode.AddValue("totalSlides", this._totalSlides);
-            configNode.AddValue("forceSlideshowWithNoImageFiles", this._forceSlideshowWithNoImageFiles);
             configNode.AddValue("includeOriginalScreens", this._includeOriginalScreens);
+            configNode.AddValue("forceSlideshowWithNoImageFiles", this._forceSlideshowWithNoImageFiles);
             configNode.AddValue("displayTime", this._displayTime);
             configNode.AddValue("fadeInTime", this._fadeInTime);
             configNode.AddValue("fadeOutTime", this._fadeOutTime);
@@ -435,8 +435,8 @@ namespace LoadingScreenManager
             configNode.TryGetValue("dumpScreens", ref this._dumpScreens);
             configNode.TryGetValue("dumpTips", ref this._dumpTips);
             configNode.TryGetValue("totalSlides", ref this._totalSlides);
-            configNode.TryGetValue("forceSlideshowWithNoImageFiles", ref this._forceSlideshowWithNoImageFiles);
             configNode.TryGetValue("includeOriginalScreens", ref this._includeOriginalScreens);
+            configNode.TryGetValue("forceSlideshowWithNoImageFiles", ref this._forceSlideshowWithNoImageFiles);
             configNode.TryGetValue("displayTime", ref this._displayTime);
             configNode.TryGetValue("fadeInTime", ref this._fadeInTime);
             configNode.TryGetValue("fadeOutTime", ref this._fadeOutTime);
