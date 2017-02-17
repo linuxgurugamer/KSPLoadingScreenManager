@@ -75,7 +75,7 @@ namespace LoadingScreenManager
 
         #region Constants
 
-        private const string Version = "v0.91 [PRERELEASE]";
+        private const string Version = "v1.00";
         private const string ConfigFileName = "LoadingScreenManager.cfg";
         private const string LogMessageFormat = "[LSM] {0}";
 
@@ -91,8 +91,7 @@ namespace LoadingScreenManager
 
         // -- Configuration fields and their default values.  (If no default below, uses C# default for type.) --
 
-        // TODO: Debug Logging is ENABLED for prerelease... normally will want this false.
-        private bool _debugLogging = true;
+        private bool _debugLogging;
         private bool _dumpTips;
         private bool _dumpScreens;
 
@@ -120,12 +119,12 @@ namespace LoadingScreenManager
         ///     All core logic is called from here since we want to make our changes before everything gets running...
         /// </remarks>
         [UsedImplicitly]
-        public void Awake()
+        public void Start()
         {
             this.WriteLog("LoadingScreenManager {0} activated", Version);
-            if (this._debugLogging) this.WriteStartupDebuggingInfo();
 
             this.LoadConfig();
+            if (this._debugLogging) this.WriteStartupDebuggingInfo();
             this.ModifyLoadingScreens();
 
             this.WriteLog("LoadingScreenManager {0} finished", Version);
@@ -315,18 +314,24 @@ namespace LoadingScreenManager
 
             foreach (var imageFolder in this._imageFolders)
             {
+                var path = Path.Combine(dataPath, imageFolder.path).Replace('\\', '/');
                 var searchOption = imageFolder.ignoreSubfolders ? SearchOption.TopDirectoryOnly : SearchOption.AllDirectories;
 
-                // Unity always uses a forward slash in paths so these must be changed on backslash OSs (e.g. Windows).
-                var path = Path.Combine(dataPath, imageFolder.path).Replace('\\', '/');
-                // Can only use one mask at a time so we have to do multiple GetFiles() calls.
-                // All this does is split up the filemasks and then making the call for each of them with the appropriate file
-                // masks.  SelectMany just lets us do it all at once without having to use a loop.
-                filenames.AddRange(imageFolder.fileMasks.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries)
-                    .SelectMany(fm => Directory.GetFiles(path, fm.Trim(), searchOption) ?? new string[0])
-                    .Select(fn => fn.Replace('\\', '/')));
-
-                this.WriteLog("... Added image path:  {0}", path);
+                try
+                {
+                    // Unity always uses a forward slash in paths so these must be changed on backslash OSs (e.g. Windows).
+                    // Can only use one mask at a time so we have to do multiple GetFiles() calls.
+                    // All this does is split up the filemasks and then making the call for each of them with the appropriate file
+                    // masks.  SelectMany just lets us do it all at once without having to use a loop.
+                    filenames.AddRange(imageFolder.fileMasks.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries)
+                        .SelectMany(fm => Directory.GetFiles(path, fm.Trim(), searchOption) ?? new string[0])
+                        .Select(fn => fn.Replace('\\', '/')));
+                    this.WriteLog("... Added image path:  {0}", path);
+                }
+                catch (IOException ex)
+                {
+                    this.WriteLog("ERROR: Unable to access folder '{0}':  {1}", path, ex.Message);
+                }
             }
 
             if (this._debugLogging)
@@ -355,8 +360,10 @@ namespace LoadingScreenManager
                 {
                     using (var streamReader = new StreamReader(this._tipsFile))
                     {
-                        customTips.AddRange(streamReader.ReadToEnd().Split(new[] { Environment.NewLine },
-                            StringSplitOptions.RemoveEmptyEntries).Select(t => t.Trim()));
+                        customTips.AddRange(streamReader.ReadToEnd()
+                            .Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries)
+                            .Select(t => t.Trim())
+                            .Where(t => t.Length > 0 && t[0] != '#'));
                     }
                 }
                 catch (FileNotFoundException)
@@ -423,7 +430,7 @@ namespace LoadingScreenManager
                     configNode.AddNode(loadedFolderConfigNode);
                 }
             }
-            else this.WriteDebugLog("... No file found, using default configuration");
+            else this.WriteLog("... No file found, using default configuration");
 
             // Get legacy settings in case of old version, they will be upgraded.
             configNode.TryGetValue("screenshotFolder", ref screenshotFolder);
@@ -511,7 +518,7 @@ namespace LoadingScreenManager
                 // Screen textures and tips are custom to each screen.
                 if (this._dumpScreens)
                 {
-                    this.WriteDebugLog(">> >> Screen Texture Names:");
+                    this.WriteDebugLog(">> >> Existing screen texture ames:");
                     foreach (var screenTexture in screen.screens)
                     {
                         this.WriteDebugLog("{0}", screenTexture.name);
@@ -519,7 +526,7 @@ namespace LoadingScreenManager
                 }
                 if (this._dumpTips)
                 {
-                    this.WriteDebugLog(">> >> Screen Tips:");
+                    this.WriteDebugLog(">> >> Existing screen tips:");
                     foreach (var tip in screen.tips)
                     {
                         this.WriteDebugLog("{0}", tip);

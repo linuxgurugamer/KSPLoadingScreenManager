@@ -7,7 +7,8 @@
 *.*proj.user
 *.user
 **/TEMP/
-**/Build/
+**/releases/
+**/Release/
 **/Library/
 **/__pycache__/
 **/.idea/workspace.xml
@@ -17,4 +18,3 @@
 *.pdb
 *.VC.VC.opendb
 *.OLD
-
