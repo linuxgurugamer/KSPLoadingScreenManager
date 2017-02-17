@@ -7,7 +7,7 @@ show a slideshow of custom images while KSP loads, and also allows customizing
 the "witty loading tips" shown during loading.
 
 For discussion/information/support go to the
-[KSP Forum Thread](http://forum.kerbalspaceprogram.com/index.php?/topic/156064-wip-122-loadingscreenmanager-show-your-own-images-while-ksp-loads/).
+[KSP Forum Thread](http://forum.kerbalspaceprogram.com/index.php?/topic/156064-122-loadingscreenmanager-v10-show-your-own-images-while-ksp-loads/).
 
 
 ## Features (v1.0)
@@ -43,7 +43,7 @@ Licence is **CC BY-NC-SA** - see here for more:  https://creativecommons.org/lic
 
 ## Installation
 
-To use the mod in KSP, download the appropriate zip file from the `Release` folder:
+To use the mod in KSP, download the appropriate zip file from the [Releases area](https://github.com/paulprogart/KSPLoadingScreenManager/releases):
 
 * [32-bit Windows (x86)](https://github.com/paulprogart/KSPLoadingScreenManager/releases/download/v1.00/KSP-LSM-1-00-x86.zip)
 * [64-bit Windows (x64)](https://github.com/paulprogart/KSPLoadingScreenManager/releases/download/v1.00/KSP-LSM-1-00-x64.zip)
