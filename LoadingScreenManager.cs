@@ -75,7 +75,7 @@ namespace LoadingScreenManager
 
         #region Constants
 
-        private const string Version = "v1.00";
+        private const string Version = "v1.01";
         private const string ConfigFileName = "LoadingScreenManager.cfg";
         private const string LogMessageFormat = "[LSM] {0}";
 
@@ -141,17 +141,20 @@ namespace LoadingScreenManager
         {
             // We are going to rebuild the loaders and screens, so first grab the existing ones.
 
-            // The logic is built to cope if mods and/or a future version change the screen types and/or ordering.  It's very
-            // YAGNI to do this but I wanted the exercise of it and it wasn't too much effort.
-            // However, it expects there to be exactly one screen for every loader.  (Too many cases otherwise...)
-            if (LoadingScreen.Instance.loaders == null || LoadingScreen.Instance.Screens == null ||
-                LoadingScreen.Instance.loaders.Count != LoadingScreen.Instance.Screens.Count)
+            // The logic is built to cope if mods and/or a future version change the screen types and/or ordering.  Originally
+            // I thought this would be YAGNI but it turns out some mods add loaders and not screens so in fact it is very
+            // needed, and the first implementation did not quite go far enough!
+
+            // I don't know why anything would clear these, but just in case...
+            if (LoadingScreen.Instance.loaders == null)
             {
-                this.WriteLog("!!! ERROR - Unexpected Loading Screen initial state.\n" +
-                              "Likely some mod has messed with things, or the KSP version is incompatible - aborting.");
-                ScreenMessages.PostScreenMessage("LoadingScreenManager *DISABLED* - unexpected initial state",
-                    15.0f, ScreenMessageStyle.UPPER_CENTER);
-                return;
+                this.WriteLog("** WARNING - Loaders not defined.");
+                LoadingScreen.Instance.loaders = new List<LoadingSystem>();
+            }
+            if (LoadingScreen.Instance.Screens == null)
+            {
+                this.WriteLog("** WARNING - Screens not defined.");
+                LoadingScreen.Instance.Screens = new List<LoadingScreen.LoadingScreenState>();
             }
 
             var gameDatabaseIndex = -1;
@@ -267,7 +270,7 @@ namespace LoadingScreenManager
                 {
                     if (i != gameDatabaseIndex) existingLoaders.Add(LoadingScreen.Instance.loaders[i++]);
                 }
-                var totalDummyLoaders = this._totalSlides - existingLoaders.Count;
+                var totalDummyLoaders = newScreens.Count - existingLoaders.Count;
 
                 var newLoaders = new List<LoadingSystem>(this._totalSlides + 1);
                 for (var i = 0; i < totalDummyLoaders; i++)
@@ -292,10 +295,15 @@ namespace LoadingScreenManager
                 LoadingScreen.Instance.loaders = newLoaders;
                 LoadingScreen.Instance.Screens = newScreens;
 
-                // The logo is not counted as a slide.
-                var slideCount = gameDatabaseIndex >= 0 ? newScreens.Count - 1 : newScreens.Count;
-                this.WriteDebugLog("{0} loading screens set{1}", slideCount, gameDatabaseIndex >= 0 ? " (including logo)" : "");
+                // Raw counts for debugging.
+                this.WriteDebugLog("{0} loaders set{1}", newLoaders.Count, 
+                    gameDatabaseIndex >= 0 ? " (including GameDatabase)" : "");
+                this.WriteDebugLog("{0} raw screens set{1}", newScreens.Count, 
+                    gameDatabaseIndex >= 0 ? " (including logo)" : "");
 
+                // Slide count.  The logo is not counted as a slide.
+                var slideCount = gameDatabaseIndex >= 0 ? newScreens.Count - 1 : newScreens.Count;
+                this.WriteLog("{0} slides set", slideCount);
                 if (slideCount < this._totalSlides)
                 {
                     this.WriteLog("** WARNING:  Not enough images available ({0}) to meet requested number of slides ({1}).",
@@ -321,8 +329,8 @@ namespace LoadingScreenManager
                 {
                     // Unity always uses a forward slash in paths so these must be changed on backslash OSs (e.g. Windows).
                     // Can only use one mask at a time so we have to do multiple GetFiles() calls.
-                    // All this does is split up the filemasks and then making the call for each of them with the appropriate file
-                    // masks.  SelectMany just lets us do it all at once without having to use a loop.
+                    // All this does is split up the filemasks and then making the call for each of them with the appropriate
+                    // file masks.  SelectMany just lets us do it all at once without having to use a loop.
                     filenames.AddRange(imageFolder.fileMasks.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries)
                         .SelectMany(fm => Directory.GetFiles(path, fm.Trim(), searchOption) ?? new string[0])
                         .Select(fn => fn.Replace('\\', '/')));
@@ -518,7 +526,7 @@ namespace LoadingScreenManager
                 // Screen textures and tips are custom to each screen.
                 if (this._dumpScreens)
                 {
-                    this.WriteDebugLog(">> >> Existing screen texture ames:");
+                    this.WriteDebugLog(">> >> Existing screen texture names:");
                     foreach (var screenTexture in screen.screens)
                     {
                         this.WriteDebugLog("{0}", screenTexture.name);
