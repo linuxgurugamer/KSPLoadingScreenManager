@@ -59,8 +59,7 @@ To use the mod in KSP, download the appropriate zip file from the [Releases area
   * If there are issues, try the x86 version.
 * **NOTE**: Non-Windows users will have to build from source (see [below](#source)).
 
-Unzip this to `<KSP Install Folder>/GameData`.  It will create its own
-folder within, and KSP should pick it up automatically the next time it's run.
+Unzip this to `<KSP Install Folder>/GameData`.  KSP should pick it up automatically the next time it's run.
 
 **NOTE**: **Only KSP 1.2.2 is officially supported.**  I have no idea if the appropriate API calls are
 available in earlier versions.  You can try, but if it doesn't work you're out of luck.
