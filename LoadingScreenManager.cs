@@ -265,10 +265,11 @@ namespace LoadingScreenManager
                 }
 
                 // Existing loaders are saved to be added at the end.  See below for why.
-                var existingLoaders = new List<LoadingSystem>(LoadingScreen.Instance.loaders.Count);
+                var existingLoaders = new List<LoadingSystem>(this._totalSlides + 1);
+                // ReSharper disable once LoopCanBeConvertedToQuery
                 for (var i = 0; i < LoadingScreen.Instance.loaders.Count; i++)
                 {
-                    if (i != gameDatabaseIndex) existingLoaders.Add(LoadingScreen.Instance.loaders[i++]);
+                    if (i != gameDatabaseIndex) existingLoaders.Add(LoadingScreen.Instance.loaders[i]);
                 }
                 var totalDummyLoaders = newScreens.Count - existingLoaders.Count;
 

@@ -7,10 +7,10 @@ show a slideshow of custom images while KSP loads, and also allows customizing
 the "witty loading tips" shown during loading.
 
 For discussion/information/support go to the
-[KSP Forum Thread](http://forum.kerbalspaceprogram.com/index.php?/topic/156064-122-loadingscreenmanager-v101-show-your-own-images-while-ksp-loads/).
+[KSP Forum Thread](http://forum.kerbalspaceprogram.com/index.php?/topic/156064-122-loadingscreenmanager-v102-show-your-own-images-while-ksp-loads/).
 
 
-## Features (v1.01)
+## Features (v1.02)
 
 * Show your own images while KSP loads (PNG or JPG formats, any size)
 * Show multiple random images during loading as a slideshow
@@ -25,6 +25,10 @@ For discussion/information/support go to the
 
 
 ## Change Notes
+
+__From v1.01__
+
+* Fixed accidentally skipping existing loaders in some cases (with predictably disastrous results).
 
 __From v1.00__
 
@@ -53,8 +57,8 @@ Licence is **CC BY-NC-SA** - see here for more:  https://creativecommons.org/lic
 
 To use the mod in KSP, download the appropriate zip file from the [Releases area](https://github.com/paulprogart/KSPLoadingScreenManager/releases):
 
-* [32-bit Windows (x86)](https://github.com/paulprogart/KSPLoadingScreenManager/releases/download/v1.01/KSP-LSM-1-01-x86.zip)
-* [64-bit Windows (x64)](https://github.com/paulprogart/KSPLoadingScreenManager/releases/download/v1.01/KSP-LSM-1-01-x64.zip)
+* [32-bit Windows (x86)](https://github.com/paulprogart/KSPLoadingScreenManager/releases/download/v1.02/KSP-LSM-1-02-x86.zip)
+* [64-bit Windows (x64)](https://github.com/paulprogart/KSPLoadingScreenManager/releases/download/v1.02/KSP-LSM-1-02-x64.zip)
   * Use 64-bit version only if running 64-bit KSP (`KSP_x64.exe`).
   * If there are issues, try the x86 version.
 * **NOTE**: Non-Windows users will have to build from source (see [below](#source)).
