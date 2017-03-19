@@ -18,3 +18,5 @@
 *.pdb
 *.VC.VC.opendb
 *.OLD
+*.csproj
+*.zip

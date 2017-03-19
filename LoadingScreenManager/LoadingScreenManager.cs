@@ -32,7 +32,7 @@ namespace LoadingScreenManager
         /// <summary>
         ///     Holds the configuration for an image folder definition.
         /// </summary>
-        private struct ImageFolder
+        public struct ImageFolder
         {
             /// <summary>
             ///     Path relative to the KSP installation folder, including trailing / (slash).
@@ -72,43 +72,23 @@ namespace LoadingScreenManager
         }
 
         #endregion
-
-        #region Constants
+#region Constants
 
         private const string Version = "v1.01";
         private const string ConfigFileName = "LoadingScreenManager.cfg";
         private const string LogMessageFormat = "[LSM] {0}";
 
-        private const string DefaultPath = "Screenshots/";
-        private const string DefaultFileMasks = "*.png;*.jpg";
+     //   private const string DefaultPath = "Screenshots/";
+      //  private const string DefaultFileMasks = "*.png;*.jpg";
 
         #endregion
 
         #region Configuration Fields
 
         private readonly Random _random = new Random();
-        private readonly List<ImageFolder> _imageFolders = new List<ImageFolder>();
+  #endregion
 
-        // -- Configuration fields and their default values.  (If no default below, uses C# default for type.) --
-
-        private bool _debugLogging;
-        private bool _dumpTips;
-        private bool _dumpScreens;
-
-        private int _totalSlides = 20;
-        private bool _includeOriginalScreens = true;
-        private bool _forceSlideshowWithNoImageFiles;
-
-        // These are all in seconds.
-        private float _displayTime = 5.0f;
-        private float _fadeInTime = 0.5f;
-        private float _fadeOutTime = 0.5f;
-        private float _tipTime = 5.0f;
-
-        private string _tipsFile = "";
-        private bool _includeOriginalTips = true;
-
-        #endregion
+        Config cfg = new Config();
 
         #region Public Methods
 
@@ -123,8 +103,8 @@ namespace LoadingScreenManager
         {
             this.WriteLog("LoadingScreenManager {0} activated", Version);
 
-            this.LoadConfig();
-            if (this._debugLogging) this.WriteStartupDebuggingInfo();
+            //this.LoadConfig();
+            if (cfg._debugLogging) this.WriteStartupDebuggingInfo();
             this.ModifyLoadingScreens();
 
             this.WriteLog("LoadingScreenManager {0} finished", Version);
@@ -198,10 +178,10 @@ namespace LoadingScreenManager
             var filenames = this.GetImageFilenames();
 
             var customTips = this.LoadCustomTips();
-            if (this._includeOriginalTips && firstModifiableScreen != null) customTips.AddRange(firstModifiableScreen.tips);
+            if (cfg._includeOriginalTips && firstModifiableScreen != null) customTips.AddRange(firstModifiableScreen.tips);
             var tips = customTips.ToArray();
 
-            if (this._includeOriginalScreens && firstModifiableScreen != null)
+            if (cfg._includeOriginalScreens && firstModifiableScreen != null)
             {
                 for (var i = 0; i < firstModifiableScreen.screens.Length; i++)
                 {
@@ -210,11 +190,11 @@ namespace LoadingScreenManager
                 }
             }
 
-            if (this._forceSlideshowWithNoImageFiles || filenames.Count > 0)
+            if (cfg._forceSlideshowWithNoImageFiles || filenames.Count > 0)
             {
-                var newScreens = new List<LoadingScreen.LoadingScreenState>(this._totalSlides + 1);
+                var newScreens = new List<LoadingScreen.LoadingScreenState>(cfg._totalSlides + 1);
 
-                while (newScreens.Count < this._totalSlides && filenames.Count > 0)
+                while (newScreens.Count < cfg._totalSlides && filenames.Count > 0)
                 {
                     var filenameIndex = this._random.Next(filenames.Count);
                     var filename = filenames[filenameIndex];
@@ -254,10 +234,10 @@ namespace LoadingScreenManager
                     // The default on the main screen is 40 minutes, so if we didn't do this the slideshow wouldn't work!
                     var screen = new LoadingScreen.LoadingScreenState
                     {
-                        displayTime = this._displayTime,
-                        fadeInTime = this._fadeInTime,
-                        fadeOutTime = this._fadeOutTime,
-                        tipTime = this._tipTime,
+                        displayTime = cfg._displayTime,
+                        fadeInTime = cfg._fadeInTime,
+                        fadeOutTime = cfg._fadeOutTime,
+                        tipTime = cfg._tipTime,
                         screens = new[] { texture },
                         tips = tips
                     };
@@ -265,7 +245,7 @@ namespace LoadingScreenManager
                 }
 
                 // Existing loaders are saved to be added at the end.  See below for why.
-                var existingLoaders = new List<LoadingSystem>(this._totalSlides + 1);
+                var existingLoaders = new List<LoadingSystem>(cfg._totalSlides + 1);
                 // ReSharper disable once LoopCanBeConvertedToQuery
                 for (var i = 0; i < LoadingScreen.Instance.loaders.Count; i++)
                 {
@@ -273,7 +253,7 @@ namespace LoadingScreenManager
                 }
                 var totalDummyLoaders = newScreens.Count - existingLoaders.Count;
 
-                var newLoaders = new List<LoadingSystem>(this._totalSlides + 1);
+                var newLoaders = new List<LoadingSystem>(cfg._totalSlides + 1);
                 for (var i = 0; i < totalDummyLoaders; i++)
                 {
                     newLoaders.Add(new DummyLoader());
@@ -305,10 +285,10 @@ namespace LoadingScreenManager
                 // Slide count.  The logo is not counted as a slide.
                 var slideCount = gameDatabaseIndex >= 0 ? newScreens.Count - 1 : newScreens.Count;
                 this.WriteLog("{0} slides set", slideCount);
-                if (slideCount < this._totalSlides)
+                if (slideCount < cfg._totalSlides)
                 {
                     this.WriteLog("** WARNING:  Not enough images available ({0}) to meet requested number of slides ({1}).",
-                        slideCount, this._totalSlides);
+                        slideCount, cfg._totalSlides);
                 }
             }
         }
@@ -321,7 +301,7 @@ namespace LoadingScreenManager
 
             this.WriteLog("Finding image files...");
 
-            foreach (var imageFolder in this._imageFolders)
+            foreach (var imageFolder in cfg._imageFolders)
             {
                 var path = Path.Combine(dataPath, imageFolder.path).Replace('\\', '/');
                 var searchOption = imageFolder.ignoreSubfolders ? SearchOption.TopDirectoryOnly : SearchOption.AllDirectories;
@@ -343,7 +323,7 @@ namespace LoadingScreenManager
                 }
             }
 
-            if (this._debugLogging)
+            if (cfg._debugLogging)
             {
                 foreach (var filename in filenames)
                 {
@@ -361,13 +341,13 @@ namespace LoadingScreenManager
         private List<string> LoadCustomTips()
         {
             var customTips = new List<string>();
-            if (!string.IsNullOrEmpty(this._tipsFile))
+            if (!string.IsNullOrEmpty(cfg._tipsFile))
             {
-                var tipsFile = this._tipsFile.Replace('\\', '/');
+                var tipsFile = cfg._tipsFile.Replace('\\', '/');
                 this.WriteLog("Custom tips file:  {0}", tipsFile);
                 try
                 {
-                    using (var streamReader = new StreamReader(this._tipsFile))
+                    using (var streamReader = new StreamReader(cfg._tipsFile))
                     {
                         customTips.AddRange(streamReader.ReadToEnd()
                             .Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries)
@@ -393,6 +373,7 @@ namespace LoadingScreenManager
             return customTips;
         }
 
+#if false
         /// <summary>
         ///     Loads the configuration file and sets up default values.
         /// </summary>
@@ -481,7 +462,7 @@ namespace LoadingScreenManager
                 folderConfigNode.TryGetValue("path", ref imageFolder.path);
                 folderConfigNode.TryGetValue("fileMasks", ref imageFolder.fileMasks);
                 folderConfigNode.TryGetValue("ignoreSubfolders", ref imageFolder.ignoreSubfolders);
-                this._imageFolders.Add(imageFolder);
+                cfg._imageFolders.Add(imageFolder);
             }
 
             // Remove legacy settings.
@@ -497,6 +478,7 @@ namespace LoadingScreenManager
 
             this.WriteDebugLog("... Done");
         }
+#endif
 
         /// <summary>
         ///     Dumps a bunch of debug info to the log.
@@ -525,7 +507,7 @@ namespace LoadingScreenManager
                     screen.fadeInTime, screen.fadeOutTime, screen.tipTime);
 
                 // Screen textures and tips are custom to each screen.
-                if (this._dumpScreens)
+                if (cfg._dumpScreens)
                 {
                     this.WriteDebugLog(">> >> Existing screen texture names:");
                     foreach (var screenTexture in screen.screens)
@@ -533,7 +515,7 @@ namespace LoadingScreenManager
                         this.WriteDebugLog("{0}", screenTexture.name);
                     }
                 }
-                if (this._dumpTips)
+                if (cfg._dumpTips)
                 {
                     this.WriteDebugLog(">> >> Existing screen tips:");
                     foreach (var tip in screen.tips)
@@ -563,9 +545,9 @@ namespace LoadingScreenManager
         [StringFormatMethod("format")]
         private void WriteDebugLog(string format, params object[] args)
         {
-            if (this._debugLogging) Debug.LogFormat(this, string.Format(LogMessageFormat, format), args);
+            if (cfg._debugLogging) Debug.LogFormat(this, string.Format(LogMessageFormat, format), args);
         }
 
-        #endregion
+#endregion
     }
 }
