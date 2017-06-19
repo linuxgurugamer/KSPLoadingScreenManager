@@ -208,7 +208,7 @@ namespace LoadingScreenManager
                         Debug.Assert(firstModifiableScreen != null);
                         // ReSharper doesn't recognize Unity's Assert() and I don't want to bother with external annotations...
                         // ReSharper disable once PossibleNullReferenceException
-                        texture = firstModifiableScreen.screens[int.Parse(filename.Substring(1))];
+                        texture = (Texture2D)firstModifiableScreen.screens[int.Parse(filename.Substring(1))];
                     }
                     else
                     {
