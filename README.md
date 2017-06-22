@@ -1,14 +1,18 @@
 # LoadingScreenManager
-## A loading screen / slideshow mod for Kerbal Space Program 1.2.2
-### By @paulprogart
+## A loading screen / slideshow mod for Kerbal Space Program 1.3.0
+### By @paulprogart, updated and maintained by LinuxGuruGamer
 
-LoadingScreenManager (LSM) is a simple plugin for KSP 1.2.2 that will
+LoadingScreenManager (LSM) is a simple plugin for KSP 1.3.0 that will
 show a slideshow of custom images while KSP loads, and also allows customizing
 the "witty loading tips" shown during loading.
 
 For discussion/information/support go to the
-[KSP Forum Thread](http://forum.kerbalspaceprogram.com/index.php?/topic/156064-122-loadingscreenmanager-v102-show-your-own-images-while-ksp-loads/).
+[KSP Forum Thread](http://forum.kerbalspaceprogram.com/index.php?/topic/162397-130-loading-screen-manager/).
 
+## Features (v1.2.0)
+* Updated for KSP 1.3
+* Added code to put assembly version into dll for easier debugging
+* Created batch files to deploy and build release versions
 
 ## Features (v1.02)
 
