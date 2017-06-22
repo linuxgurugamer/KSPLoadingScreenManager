@@ -7,7 +7,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LoadingScreenManager", "Loa
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SolutionItems", "SolutionItems", "{8D4EC878-F6C9-4CF9-BC1C-6E8109C96449}"
 	ProjectSection(SolutionItems) = preProject
-		LoadingScreenManager\GameData\LoadingScreenManager\LoadingScreenmanager.version = LoadingScreenManager\GameData\LoadingScreenManager\LoadingScreenmanager.version
+		buildRelease.bat = buildRelease.bat
+		deploy.bat = deploy.bat
+		GameData\LoadingScreenManager\LoadingScreenmanager.version = GameData\LoadingScreenManager\LoadingScreenmanager.version
 	EndProjectSection
 EndProject
 Global

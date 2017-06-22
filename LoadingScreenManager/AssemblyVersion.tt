@@ -28,7 +28,7 @@
 	int i2 = 0;
 	string s;
 
-	string versionfile =  @"D:\Users\jbb\github\KSPLoadingScreenManager\LoadingScreenManager\GameData\LoadingScreenManager\LoadingScreenmanager.version";
+	string versionfile =  @"D:\Users\jbb\github\KSPLoadingScreenManager\GameData\LoadingScreenManager\LoadingScreenmanager.version";
 	if (!File.Exists(versionfile))
 	{
 		Write("File: " + versionfile + " missing\n");		
