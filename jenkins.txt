@@ -14,7 +14,7 @@
 #
 # All paths are relative to the top git folder of the repo
 #
-# and must use forward slashes
+# and must use forward slashes 
 #
 
 # 0:KSPVersion
