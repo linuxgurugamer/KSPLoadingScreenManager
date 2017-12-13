@@ -42,7 +42,7 @@
 
 # 7: AdditionalFolders in the GameData, 1 per line
 #7:ConnectedLivingSpace
-7:../
+7:GameData
 
 # 8: AdditionalMods to include
 #8:ConnectedLivingSpace
