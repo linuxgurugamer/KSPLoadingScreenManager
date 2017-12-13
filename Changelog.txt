@@ -1,0 +1,21 @@
+
+
+1.2.0
+	Adoption by LGG
+	Recompiled for KSP 1.3
+
+1.2.1
+	Recompiled for KSP 1.3.1
+
+1.2.2
+	Fixed static window id which was causing an incompatibility with the KerbalX mod
+
+__From v1.01__
+
+* Fixed accidentally skipping existing loaders in some cases (with predictably disastrous results).
+
+__From v1.00__
+
+* Removed conflicts with certain mods that install their own loaders (e.g. ModuleManager)
+* Minor optimizations and typo fixes.
+

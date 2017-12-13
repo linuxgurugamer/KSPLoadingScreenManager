@@ -144,12 +144,12 @@ namespace LoadingScreenManager
             {
                 if (!fileMaskWin)
                 {
-                    this.infoBounds = GUILayout.Window(GetInstanceID() + 1, infoBounds, InfoWindow, "Loading Screen Manager", window);
+                    this.infoBounds = GUILayout.Window(GetInstanceID() + 2, infoBounds, InfoWindow, "Loading Screen Manager", window);
                     if (infoBounds.height < HEIGHT)
                         infoBounds.height = HEIGHT;
                 }
                 else
-                    this.dialogBounds = GUILayout.Window(GetInstanceID() + 1, dialogBounds, DialogWindow, "Loading Screen Manager", window);
+                    this.dialogBounds = GUILayout.Window(GetInstanceID() + 3, dialogBounds, DialogWindow, "Loading Screen Manager", window);
             }
         }
 

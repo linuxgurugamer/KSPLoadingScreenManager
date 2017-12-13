@@ -105,12 +105,11 @@ namespace LoadingScreenManager
             //search recursively (setting recursive search may cause a long delay)
             fb.searchRecursively = true;
         }
-
-
+        
         void OnGUI()
         {
             if (visible)
-                windowPos = GUILayout.Window(1, windowPos, Window, "Selection ");
+                windowPos = GUILayout.Window(GetInstanceID() + 1, windowPos, Window, "Selection ");
         }
 
         void Window(int id)
