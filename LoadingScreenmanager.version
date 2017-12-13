@@ -1,0 +1,15 @@
+{
+  "NAME": "LoadingScreenManager",
+  "URL": "https://raw.githubusercontent.com/linuxgurugamer/KSPLoadingScreenManager/master/GameData/LoadingScreenManager/LoadingScreenmanager.version",
+  "VERSION": {
+    "MAJOR": 1,
+    "MINOR": 2,
+    "PATCH": 2,
+    "BUILD": 0
+  },
+  "KSP_VERSION": {
+    "MAJOR": 1,
+    "MINOR": 3,
+    "PATCH": 1
+  }
+}

@@ -114,12 +114,11 @@
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>
-start /D D:\Users\jbb\github\KSPLoadingScreenManager /WAIT deploy.bat
+start /D D:\Users\jbb\github\KSPLoadingScreenManager  /WAIT deploy.bat  $(TargetDir) $(TargetFileName)
 
 if $(ConfigurationName) == Release (
-start /D D:\Users\jbb\github\KSPLoadingScreenManager  /WAIT buildRelease.bat
-)
-</PostBuildEvent>
+	start /D D:\Users\jbb\github\KSPLoadingScreenManager  /WAIT buildRelease.bat $(TargetDir) $(TargetFileName)
+)</PostBuildEvent>
   </PropertyGroup>
   <PropertyGroup>
     <PreBuildEvent>
