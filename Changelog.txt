@@ -1,9 +1,15 @@
+1.2.3.1
+	Fixed issue with bad path when trying to load extra cfg files
+
 1.2.3
 	Thanks to @Sigma88 for the following:
 		Added code to remove dll from memory when mainmenu is reached
 	Added code copied from ModuleManager to only allow the latest version of the DLL to be used (if multiple are installed)
 	Reordered the changelog (now newest first)
 	Consolidated all logging into logging class, removes duplicated code
+	Added logoScreen config
+	Added logoTip config
+	Added ability to read multiple config files
 
 1.2.2
 	Fixed static window id which was causing an incompatibility with the KerbalX mod

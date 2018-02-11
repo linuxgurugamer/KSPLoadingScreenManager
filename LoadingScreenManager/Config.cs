@@ -94,12 +94,15 @@ namespace LoadingScreenManager
         {
             get
             {
-                return Path.Combine(Path.Combine(KSPUtil.ApplicationRootPath, ConfigFilePath), ConfigFileName).Replace('\\', '/');               
+
+                string s = Path.Combine(Path.Combine(KSPUtil.ApplicationRootPath, ConfigFilePath), ConfigFileName).Replace('\\', '/');
+                Log.Info("configFilePath: " + s);
+                return s;
             }
         }
         string ExtraCfgFilePath(string s)
         {
-            return Path.Combine(Path.Combine(KSPUtil.ApplicationRootPath, ConfigFilePath), s).Replace('\\', '/');
+            return Path.Combine(KSPUtil.ApplicationRootPath, s).Replace('\\', '/');
         }
         /// <summary>
         ///     Loads the configuration file and sets up default values.
@@ -209,13 +212,15 @@ namespace LoadingScreenManager
             foreach (var f in cfgFiles)
             {
                 // don't reprocess the same config file again
-                if (f.Replace('\\', '/') != configFilePath)
+                var f1 = ExtraCfgFilePath(f);
+                if  (f1 != configFilePath)
                 {
-                    Log.Info("extra files: " + f);
-                    loadedConfigNode = ConfigNode.Load(ExtraCfgFilePath(f));
+                    Log.Info("extra files: " + f1);
+                    Log.Info("configFilePath: " + configFilePath);
+                    loadedConfigNode = ConfigNode.Load(f1);
                     if (loadedConfigNode != null)
                     {
-                        Log.Info("... File loaded: " + ExtraCfgFilePath(f));
+                        Log.Info("... File loaded: " + f1);
 
                         // Need to save all the logo screens and logo tips into arrays
 
@@ -299,7 +304,11 @@ namespace LoadingScreenManager
             // Done, now save the modified configuration back to disk.
             Log.Info("... Saving configuration file:\n{0}", configNode);
             var directoryName = Path.GetDirectoryName(configFilePath);
-            if (directoryName != null) Directory.CreateDirectory(directoryName);
+            if (directoryName != null)
+            {
+                Log.Info("SaveConfig, directoryName: " + directoryName);
+                Directory.CreateDirectory(directoryName);
+            }
             configNode.Save(configFilePath);
 
             Log.Info("... Done");
