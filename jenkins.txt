@@ -24,7 +24,7 @@
 1:LoadingScreenManager, LoadingScreenManager.version
 
 # 2:PROJNAME, PROJFILE, VERSIONFILE, PLUGINSFOLDER
-2:LoadingScreenManager,LoadingScreenManager/LoadingScreenManager.csproj,LoadingScreenManager.version,GameData
+2:LoadingScreenManager,LoadingScreenManager/LoadingScreenManager.csproj,LoadingScreenManager.version,GameData/LoadingScreenManager/Plugins
 
 # 3:SOURCEFILE, DESTDIR
 3:LoadingScreenManager.version,GameData/LoadingScreenManager

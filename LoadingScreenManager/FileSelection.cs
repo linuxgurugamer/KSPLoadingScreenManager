@@ -19,6 +19,7 @@ namespace LoadingScreenManager
         string[] layoutTypes = { "Type 0", "Type 1" };
         //initialize file browser
         FileBrowser fb = new FileBrowser();
+        
        
         string output = "no file";
         public bool visible = false;
@@ -56,7 +57,14 @@ namespace LoadingScreenManager
                 dir = ".";
             fb.setDirectory(dir, dirSelect);
         }
+        public void SetExtensions(string extensions)
+        {
+            char[] stringSeparators = new char[] { ';' };
 
+            fb.extensions = extensions.Split(stringSeparators, System.StringSplitOptions.RemoveEmptyEntries);
+            foreach (var s in fb.extensions)
+                Log.Info("Extension set for file selection: " + s);
+        }
         public void startDialog()
         {
             visible = true;
@@ -70,6 +78,7 @@ namespace LoadingScreenManager
         // Use this for initialization
         void Start()
         {
+            
             fb.setGUIRect(new Rect(150, 25, WIDTH - 150, HEIGHT - 25));
             visible = true;
             done = false;

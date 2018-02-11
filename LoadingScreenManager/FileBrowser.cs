@@ -31,6 +31,7 @@ namespace LoadingScreenManager
                                                           //File Options
         public string searchPattern = "*"; //search pattern used to find files
                                            //Output
+        public string[] extensions = null;
         public FileInfo outputFile; //the selected output file
                                     //Search
         public DirectoryInfo outputDirectory;
@@ -151,22 +152,22 @@ namespace LoadingScreenManager
                             fileScroll = GUILayout.BeginScrollView(fileScroll);
                             if (directorySelection == false)
                                 for (int fi = 0; fi < files.Length; fi++)
-                            {
-                                if (selectedFile == fi)
                                 {
-                                    defaultColor = GUI.color;
-                                    GUI.color = selectedColor;
-                                }
+                                    if (selectedFile == fi)
+                                    {
+                                        defaultColor = GUI.color;
+                                        GUI.color = selectedColor;
+                                    }
 
-                                if (files[fi].button())
-                                {
-                                    outputFile = files[fi].fi;
-                                    outputDirectory = currentDirectory;
-                                    selectedFile = fi;
+                                    if (files[fi].button())
+                                    {
+                                        outputFile = files[fi].fi;
+                                        outputDirectory = currentDirectory;
+                                        selectedFile = fi;
+                                    }
+                                    if (selectedFile == fi)
+                                        GUI.color = defaultColor;
                                 }
-                                if (selectedFile == fi)
-                                    GUI.color = defaultColor;
-                            }
                             GUILayout.EndScrollView();
                         }
                     }
@@ -350,10 +351,20 @@ namespace LoadingScreenManager
                 else
                     directories[d] = new DirectoryInformation(dia[d]);
             }
-
+            FileInfo[] fia;
             //get files
-            FileInfo[] fia = di.GetFiles(searchPattern);
-            //FileInfo[] fia = searchDirectory(di,searchPattern);
+            if (extensions == null)
+            {
+                fia = di.GetFiles(searchPattern);
+                //FileInfo[] fia = searchDirectory(di,searchPattern);
+            }
+            else
+            {
+                fia = di.GetFiles()
+                        .Where(f => extensions.Contains(f.Extension.ToLower()))
+                        .ToArray();
+            }
+
             files = new FileInformation[fia.Length];
             for (int f = 0; f < fia.Length; f++)
             {

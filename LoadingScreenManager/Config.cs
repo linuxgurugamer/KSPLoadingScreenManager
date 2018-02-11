@@ -11,6 +11,7 @@ namespace LoadingScreenManager
     public class Config
     {
         public const string DefaultPath = "Screenshots/";
+        private const string ConfigFilePath = "GameData/LoadingScreenManager/PluginData/";
         private const string ConfigFileName = "LoadingScreenManager.cfg";
         private const string LogMessageFormat = "[LSM] {0}";
         public const string DefaultFileMasks = "*.png;*.jpg";
@@ -39,7 +40,13 @@ namespace LoadingScreenManager
         public bool _includeOriginalTips = true;
 
         public bool _neverShowAgain = false;
-#endregion
+
+        public string _logoScreen = "";
+        public List<string> logoScreens = new List<string>();
+        public string _logoTip = "";
+        public List<string> logoTips = new List<string>();
+
+        #endregion
 
         public readonly List<LoadingScreenManager.ImageFolder> _imageFolders = new List<LoadingScreenManager.ImageFolder>();
 
@@ -53,7 +60,7 @@ namespace LoadingScreenManager
 
             LoadConfig();
         }
-
+#if false
         /// <summary>
         ///     Convenience method to write debug messages to the log using an addon-specific prefix.
         /// </summary>
@@ -62,7 +69,7 @@ namespace LoadingScreenManager
         [StringFormatMethod("format")]
         private void WriteDebugLog(string format, params object[] args)
         {
-            if (this._debugLogging) Debug.LogFormat(string.Format(LogMessageFormat, format), args);
+            if (this._debugLogging) Log.Debug(string.Format(LogMessageFormat, format), args);
         }
         /// <summary>
         ///     Convenience method to write to the log using an addon-specific prefix.
@@ -74,7 +81,7 @@ namespace LoadingScreenManager
         {
             Debug.LogFormat(string.Format(LogMessageFormat, format), args);
         }
-
+#endif
         string oldConfigFilePath
         {
             get
@@ -87,10 +94,13 @@ namespace LoadingScreenManager
         {
             get
             {
-                return Path.Combine(Path.Combine(KSPUtil.ApplicationRootPath, "GameData/LoadingScreenManager/PluginData/"), ConfigFileName).Replace('\\', '/');               
+                return Path.Combine(Path.Combine(KSPUtil.ApplicationRootPath, ConfigFilePath), ConfigFileName).Replace('\\', '/');               
             }
         }
-
+        string ExtraCfgFilePath(string s)
+        {
+            return Path.Combine(Path.Combine(KSPUtil.ApplicationRootPath, ConfigFilePath), s).Replace('\\', '/');
+        }
         /// <summary>
         ///     Loads the configuration file and sets up default values.
         /// </summary>
@@ -98,8 +108,7 @@ namespace LoadingScreenManager
         {
             // Use the PlugInData path that KSP has earmarked for this DLL.
             
-          //  var configFilePath = Path.Combine(assembly.dataPath, ConfigFileName).Replace('\\', '/');
-            this.WriteLog("Loading configuration file:  {0}", configFilePath);
+            Log.Info("Loading configuration file:  {0}", configFilePath);
 
             // Settings from prerelease that's changed in structure.
             var screenshotFolder = DefaultPath;
@@ -120,7 +129,7 @@ namespace LoadingScreenManager
             configNode.AddValue("includeOriginalTips", this._includeOriginalTips);
             configNode.AddValue("neverShowAgain", this._neverShowAgain);
 
-            this.WriteDebugLog("... Loading file");
+            Log.Info("... Loading file");
 
             // Try to read the ConfigNode from the .cfg file.  If we can, merge it with our created ConfigNode.
             // The advantage of doing it this way is that at the end we always end up with a full config file that can be saved,
@@ -129,7 +138,7 @@ namespace LoadingScreenManager
             
             if (loadedConfigNode != null)
             {
-                this.WriteDebugLog("... Old config loaded");
+                Log.Info("... Old config loaded");
                 try
                 {
                     File.Delete(oldConfigFilePath);
@@ -140,7 +149,7 @@ namespace LoadingScreenManager
                 loadedConfigNode = ConfigNode.Load(configFilePath);
             if (loadedConfigNode != null)
             {
-                this.WriteDebugLog("... File loaded");
+                Log.Info("... File loaded");
                 loadedConfigNode.CopyTo(configNode, true);
                 // CopyTo doesn't seem to deal with multiple nodes so it'll only copy one.  Thus, we have to copy them manually.
                 configNode.RemoveNodes("FOLDER");
@@ -150,7 +159,7 @@ namespace LoadingScreenManager
                     configNode.AddNode(loadedFolderConfigNode);
                 }
             }
-            else this.WriteLog("... No file found, using default configuration");
+            else Log.Info("... No file found, using default configuration");
 
             // Get legacy settings in case of old version, they will be upgraded.
             configNode.TryGetValue("screenshotFolder", ref screenshotFolder);
@@ -173,6 +182,13 @@ namespace LoadingScreenManager
             configNode.TryGetValue("includeOriginalTips", ref this._includeOriginalTips);
             configNode.TryGetValue("neverShowAgain", ref this._neverShowAgain);
 
+            configNode.TryGetValue("logoScreen", ref this._logoScreen);
+            if (this._logoScreen != null)
+            {
+                logoScreens.Add(this._logoScreen);
+                configNode.TryGetValue("logoTip", ref this._logoTip);
+                logoTips.Add(this._logoTip ?? " ");
+            }
             var folderConfigNodes = configNode.GetNodes("FOLDER");
 
             // If no folders defined, add a subnode for a default folder.
@@ -186,6 +202,40 @@ namespace LoadingScreenManager
                 configNode.AddNode(folderConfigNode);
 
                 folderConfigNodes = new[] { folderConfigNode };
+            }
+
+            // Now read all other config files in the same location, look for FOLDER nodes
+            string[] cfgFiles = Directory.GetFiles(ConfigFilePath,  "*.cfg");
+            foreach (var f in cfgFiles)
+            {
+                // don't reprocess the same config file again
+                if (f.Replace('\\', '/') != configFilePath)
+                {
+                    Log.Info("extra files: " + f);
+                    loadedConfigNode = ConfigNode.Load(ExtraCfgFilePath(f));
+                    if (loadedConfigNode != null)
+                    {
+                        Log.Info("... File loaded: " + ExtraCfgFilePath(f));
+
+                        // Need to save all the logo screens and logo tips into arrays
+
+                        configNode.TryGetValue("logoScreen", ref this._logoScreen);
+                        if (this._logoScreen != null)
+                            logoScreens.Add(this._logoScreen);
+                        configNode.TryGetValue("logoTip", ref this._logoTip);
+                        if (this._logoTip == null && this._logoScreen != null)
+                            this._logoTip = "";
+                        if (this._logoTip != null)
+                            logoTips.Add(this._logoTip);
+
+                        var loadedFolderConfigNodes = loadedConfigNode.GetNodes("FOLDER") ?? null;
+                        if (loadedFolderConfigNodes != null)
+                            foreach (var loadedFolderConfigNode in loadedFolderConfigNodes)
+                            {
+                                configNode.AddNode(loadedFolderConfigNode);
+                            }
+                    }
+                }
             }
 
             // Translate the folder config nodes into a more convenient form.
@@ -226,6 +276,9 @@ namespace LoadingScreenManager
             configNode.AddValue("includeOriginalTips", this._includeOriginalTips);
             configNode.AddValue("neverShowAgain", this._neverShowAgain);
 
+            configNode.AddValue("logoScreen", this._logoScreen);
+            configNode.AddValue("logoTip", this._logoTip);
+
 
             foreach (var imageFolder in this._imageFolders)
             {
@@ -242,14 +295,14 @@ namespace LoadingScreenManager
 
 
         public void SaveConfig(ConfigNode configNode)
-        { 
+        {
             // Done, now save the modified configuration back to disk.
-            this.WriteDebugLog("... Saving configuration file:\n{0}", configNode);
+            Log.Info("... Saving configuration file:\n{0}", configNode);
             var directoryName = Path.GetDirectoryName(configFilePath);
             if (directoryName != null) Directory.CreateDirectory(directoryName);
             configNode.Save(configFilePath);
 
-            this.WriteDebugLog("... Done");
+            Log.Info("... Done");
         }
     }
 

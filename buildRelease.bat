@@ -34,7 +34,8 @@ set ZIP="c:\Program Files\7-zip\7z.exe"
 
 rem Copy files to GameData locations
 
-copy /Y "%1%2" "%GAMEDATA%"
+
+copy /Y "%1%2" "GameData\%GAMEDIR%\Plugins"
 copy /Y %VERSIONFILE% %GAMEDATA%\%GAMEDIR%
 copy /Y ..\MiniAVC.dll %GAMEDATA%\%GAMEDIR%
 

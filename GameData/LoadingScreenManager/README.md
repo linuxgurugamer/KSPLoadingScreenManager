@@ -28,16 +28,6 @@ For discussion/information/support go to the
 * BONUS:  Will dump all the tips to the log if you really want to see them all
 
 
-## Change Notes
-
-__From v1.01__
-
-* Fixed accidentally skipping existing loaders in some cases (with predictably disastrous results).
-
-__From v1.00__
-
-* Removed conflicts with certain mods that install their own loaders (e.g. ModuleManager)
-* Minor optimizations and typo fixes.
 
 
 ## Known issues:
@@ -84,46 +74,50 @@ the info below.
 
 The base configuration settings are as follows:
 
-* **`debugLogging`** - If `True`, will include extra diagnostic info in the log.
-    * **If you are submitting a log file with regard to a problem, please turn this on first.**
-  * **NOTE**: KSP output logging must be turned on.
-* **`dumpScreens`** - If `True`, dumps a list of installed screens to the log.  Mainly for development use.
-  * **NOTE**: `debugLogging` must be `True` for this to work!
-* **`dumpTips`** - If `True`, dumps a list of the "loading tips" for each screen to the log.
-  * This is a borderline game **_SPOILER_** so it is not enabled by default.
-  * **NOTE**: `debugLogging` must be `True` for this to work!
-* **`totalSlides`** - Maximum number of slides to show during load (_not_ including the logo).  Unless you
-    have long load times or are really pressed for memory, you can leave this at the default.
-  * This value is the *maximum* number of slides KSP will show.
-    If the specified folder(s) (see below) do not contain enough files, then only the
-    number of files available will be used.  (Plus the original screens, if included.)
-  * It is also the maximum number of images that will be loaded.  If you have a fairly short load time and want to save a bit of memory you can lower this.
-  * To show only 1 slide (like current KSP), set this to 1, and set the `displayTime` to be quite large.
-  * Actual # of slides shown depends on loading time and timing settings.  Typically this will be a lot less than the value here.
-  * The approximate maximum slideshow length (in seconds) will be:
-    * `slidesToAdd * (fadeInTime + displayTime + fadeInTime)`
-  * If this is too low for your load time, the image will be blank for the last portions of loading.
-* **`includeOriginalScreens`** - If `True`, includes the provided KSP screens in the slideshow.
-  * Whether they are actually shown or not is random.
-* **`forceSlideshowWithNoImageFiles`** - Normally LSM won't try to setup a slideshow if there are no images in the
-  any of the folders, e.g. new KSP players or empty installations.  Set to
-  `True` to override this behaviour.
-  * **NOTE**:  This is mainly to allow showing a blank screen during loading.  Set this to `True`, use a `FOLDER` with no files (see below),
+`debugLogging`** - If `True`, will include extra diagnostic info in the log.
+	* **If you are submitting a log file with regard to a problem, please turn this on first.**
+	* **NOTE**: KSP output logging must be turned on.
+`dumpScreens`** - If `True`, dumps a list of installed screens to the log.  Mainly for development use.
+	* **NOTE**: `debugLogging` must be `True` for this to work!
+`dumpTips`** - If `True`, dumps a list of the "loading tips" for each screen to the log.
+    * This is a borderline game **_SPOILER_** so it is not enabled by default.
+    * **NOTE**: `debugLogging` must be `True` for this to work!
+`totalSlides`** - Maximum number of slides to show during load (_not_ including the logo).  Unless you
+		have long load times or are really pressed for memory, you can leave this at the default.
+	* This value is the *maximum* number of slides KSP will show.
+	If the specified folder(s) (see below) do not contain enough files, then only the
+		number of files available will be used.  (Plus the original screens, if included.)
+	* It is also the maximum number of images that will be loaded.  If you have a fairly short load time and want to save a bit of memory you can lower this.
+	* To show only 1 slide (like current KSP), set this to 1, and set the `displayTime` to be quite large.
+	* Actual # of slides shown depends on loading time and timing settings.  Typically this will be a lot less than the value here.
+	* The approximate maximum slideshow length (in seconds) will be:
+	* `slidesToAdd * (fadeInTime + displayTime + fadeInTime)`
+	* If this is too low for your load time, the image will be blank for the last portions of loading.
+`includeOriginalScreens`** - If `True`, includes the provided KSP screens in the slideshow.
+	* Whether they are actually shown or not is random.
+`forceSlideshowWithNoImageFiles`** - Normally LSM won't try to setup a slideshow if there are no images in the
+	any of the folders, e.g. new KSP players or empty installations.  Set to
+	`True` to override this behaviour.
+	* **NOTE**:  This is mainly to allow showing a blank screen during loading.  Set this to `True`, use a `FOLDER` with no files (see below),
     and turn `includeOriginalScreens` off, but note _this will cause an error (non-fatal) in KSP_!
-* **`displayTime`** - Time in seconds each slide is to be shown.
-  * If you only want one image (like KSP shows normally), set this to a really high value.
-* **`fadeInTime`** - Time in seconds for the fade-in & fade-out transitions to a new slide.
-  * __NOTE__: Despite the name, KSP seems to have a bug where it uses this for both fades and ignores ``fadeOutTime`` completely.  The issue was discovered too late to rename the setting.
-* **`fadeOutTime`** - Should be the time in seconds for the fade-out transition after a slide, but isn't - see above.
-* **`tipTime`** - Time in seconds each "witty loading tip" is to remain showing.
-  * Lower this time to see more tips, raise it to see fewer.
-* **`tipsFile`** - If provided, indicates a text file to read custom tips for display during loading.  Path is relative to the KSP install folder.  Can be left blank (and is by default) to disable this feature.
-  * File format is one tip per line.
-  * Lines starting with `#` are treated as comments and will be ignored, as will blank lines.
-  * Long tips seem to get wrapped onto multiple lines, but this probably should be avoided.  Maximum line length is probably dictated by your screen resolution.
-* **`includeOriginalTips`** - If `True`, includes the provided KSP tips during loading.
-  * If `tipsFile` is also provided, the original tips will be added to those from the file.  Whether they are actually shown or not is random.
-  * Unlike with screens, tips are always adjusted, so if no `tipsFile` is given and this is `False` then the screen will just say "Loading..." for the entire time.
+`displayTime`** - Time in seconds each slide is to be shown.
+	* If you only want one image (like KSP shows normally), set this to a really high value.
+`fadeInTime`** - Time in seconds for the fade-in & fade-out transitions to a new slide.
+	* __NOTE__: Despite the name, KSP seems to have a bug where it uses this for both fades and ignores ``fadeOutTime`` completely.  The issue was discovered too late to rename the setting.
+`fadeOutTime`** - Should be the time in seconds for the fade-out transition after a slide, but isn't - see above.
+`tipTime`** - Time in seconds each "witty loading tip" is to remain showing.
+	* Lower this time to see more tips, raise it to see fewer.
+`tipsFile`** - If provided, indicates a text file to read custom tips for display during loading.  Path is relative to the KSP install folder.  Can be left blank (and is by default) to disable this feature.
+	* File format is one tip per line.
+	* Lines starting with `#` are treated as comments and will be ignored, as will blank lines.
+	* Long tips seem to get wrapped onto multiple lines, but this probably should be avoided.  Maximum line length is probably dictated by your screen resolution.
+`includeOriginalTips`** - If `True`, includes the provided KSP tips during loading.
+	* If `tipsFile` is also provided, the original tips will be added to those from the file.  Whether they are actually shown or not is random.
+	* Unlike with screens, tips are always adjusted, so if no `tipsFile` is given and this is `False` then the screen will just say "Loading..." for the entire time.
+
+logoScreen		relative or absolute path to logo screen.  If relative, it starts in the main game directory
+logoTip			Tip to show when the logoScreen is being shown.  If missing, no tip will be shown on the logoScreen
+
 
 **`FOLDER` nodes** - Additionally, one or more `FOLDER` nodes should be specified with the
 following settings inside.  If no `FOLDER` nodes are present, or on
@@ -131,19 +125,19 @@ first run, a default node will be added that points to the `Screenshots/` folder
 If multiples are provided, they will be pooled together.  (All files have an equal
 chance of being selected for the slideshow.)
 
-* **`path`** - The folder to pull images from, relative to the KSP install folder.  Include the trailing slash.
-  * If OS and user permissions allow (note LSM only reads image files), it is
-    possible to use folders outside of the KSP install folder using `../`,
-    but **_this is not officially supported_**.  (If you don't know what `../` means, you aren't qualified to try this.)
-* **`fileMasks`** - File mask(s) (e.g. *.jpg).  Multiples are allowed and are separated by ; (semicolon).
-  * Default is `*.jpg;*.png`
-  * Can be used to only include certain files, e.g. `screenshot*.png`
-  *  `*` and `?` wildcards are supported and work as on Windows.
-  * **NOTE**: File masks should not include anything other than JPG or PNG images!
-    Otherwise you will see a bunch of errors and may see blank slides.
-* **`ignoreSubfolders`** - By default, all subfolders within `path` will be
-  included in the search.  Set this `True` to search _only_ `path`, ignoring
-  any subfolders inside it.
+`path`** - The folder to pull images from, relative to the KSP install folder.  Include the trailing slash.
+	* If OS and user permissions allow (note LSM only reads image files), it is
+		possible to use folders outside of the KSP install folder using `../`,
+		but **_this is not officially supported_**.  (If you don't know what `../` means, you aren't qualified to try this.)
+`fileMasks`** - File mask(s) (e.g. *.jpg).  Multiples are allowed and are separated by ; (semicolon).
+	* Default is `*.jpg;*.png`
+	* Can be used to only include certain files, e.g. `screenshot*.png`
+	*  `*` and `?` wildcards are supported and work as on Windows.
+	* **NOTE**: File masks should not include anything other than JPG or PNG images!
+		Otherwise you will see a bunch of errors and may see blank slides.
+`ignoreSubfolders`** - By default, all subfolders within `path` will be
+	included in the search.  Set this `True` to search _only_ `path`, ignoring
+	any subfolders inside it.
 
 **_IMPORTANT_: It is _not_ possible via configuration to alter or adjust the
 developer logo loading screen that is shown initially.  Such behaviour is not

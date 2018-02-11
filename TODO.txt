@@ -1,0 +1,11 @@
+ToDo
+
+To each FOLDER section
+	Add logoScreen
+	Add logoTip
+
+	All logo Screens and their associated logoTip will be displayed first, followed by all other screens
+
+Add ability to read multiple config files.  
+Initial config file loaded will be the LSM config, all other files in PluginData will then be read.
+All additional config files will only read the FOLDER node, as well as logoScreen and logoTip

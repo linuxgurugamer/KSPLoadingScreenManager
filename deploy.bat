@@ -10,12 +10,11 @@ rem    but not always
 
 set H=R:\KSP_1.3.1_dev
 set GAMEDIR=LoadingScreenManager
-set GAMEDATA="GameData\"
+set GAMEDATA="GameData\%GAMEDIR%"
 set VERSIONFILE=%GAMEDIR%.version
 
-copy /Y "%1%2" "%GAMEDATA%"
-copy /Y %VERSIONFILE% %GAMEDATA%\%GAMEDIR%
+copy /Y %VERSIONFILE% %GAMEDATA%
+copy /Y "%1%2" "GameData\%GAMEDIR%\Plugins"
 
-xcopy /y /s /I %GAMEDATA%\%GAMEDIR% "%H%\GameData\%GAMEDIR%"
-
-pause
+mkdir "%H%\GameData\%GAMEDIR%"
+xcopy /y /s GameData\%GAMEDIR% "%H%\GameData\%GAMEDIR%"

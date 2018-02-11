@@ -318,7 +318,8 @@ namespace LoadingScreenManager
 
             return firstPart + ellipsisChars + lastPart;
         }
-
+        bool selectTipsFile = false;
+        bool selectLogoScreen = false;
         private void InfoWindow(int id)
         {
             // in the following, to keep the dialog on screen, comment out the return and uncomment the GUI.enabled
@@ -373,33 +374,77 @@ namespace LoadingScreenManager
             //GUILayout.EndVertical();
             //GUILayout.BeginVertical(GUILayout.Width(390));
 
+            #region TipsFile
+
             GUILayout.BeginHorizontal();
             if (GUILayout.Button("Tips File:"))
             {
+                selectTipsFile = true;
                 if (fsDialog == null)
                     fsDialog = gameObject.AddComponent<FileSelection>();
 
                 if (cfg._tipsFile != "")
                     fsDialog.SetSelectedDirectory(Path.GetDirectoryName(cfg._tipsFile), false);
-                
+                fsDialog.SetExtensions(".txt");
                 dialogEntry = 0;
                 fsDialog.startDialog();
             }
 
-            if (fsDialog != null && fsDialog.done  &&
+            if (fsDialog != null && fsDialog.done  && selectTipsFile &&
                 fsDialog.SelectedDirectory != null && fsDialog.SelectedFile != null && dialogEntry == 0)
             {
                 if (fsDialog.SelectedDirectory != "" || fsDialog.SelectedFile != "")
                 {
                     cfg._tipsFile = StripRootPath(fsDialog.SelectedDirectory + cfg.dirSeperator + fsDialog.SelectedFile);
                 }
-                closeFSDialog();           
+                closeFSDialog();
+                selectTipsFile = false;
             }
             GUILayout.Label(cfg._tipsFile, GUI.skin.textField);
 
             GUILayout.FlexibleSpace();
             GUILayout.EndHorizontal();
+            #endregion Tipsfile
 
+            #region logoScreen
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("Logo Screen:"))
+            {
+                selectLogoScreen = true;
+                if (fsDialog == null)
+                    fsDialog = gameObject.AddComponent<FileSelection>();
+
+                if (cfg._logoScreen != "")
+                    fsDialog.SetSelectedDirectory(Path.GetDirectoryName(cfg._logoScreen), false);
+                fsDialog.SetExtensions("*.png;*.jpg");
+                dialogEntry = 0;
+                fsDialog.startDialog();
+            }
+
+            if (fsDialog != null && fsDialog.done && selectLogoScreen && 
+                fsDialog.SelectedDirectory != null && fsDialog.SelectedFile != null && dialogEntry == 0)
+            {
+                if (fsDialog.SelectedDirectory != "" || fsDialog.SelectedFile != "")
+                {
+                    cfg._logoScreen = StripRootPath(fsDialog.SelectedDirectory + cfg.dirSeperator + fsDialog.SelectedFile);
+                }
+                selectLogoScreen = false;
+                closeFSDialog();
+            }
+            GUILayout.Label(cfg._logoScreen, GUI.skin.textField);
+
+            GUILayout.FlexibleSpace();
+            GUILayout.EndHorizontal();
+            #endregion logoScreen
+#if true
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("Enter Logo tip: ");
+            //if (cfg._logoTip == null)
+                //cfg._logoTip = "";
+            cfg._logoTip = GUILayout.TextField(cfg._logoTip);
+            GUILayout.FlexibleSpace();
+            GUILayout.EndHorizontal();
+#endif
             GUILayout.Space(5);
             if (GUILayout.Button("Image Folders (click to add)"))
             {
