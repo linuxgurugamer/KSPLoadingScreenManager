@@ -1,3 +1,7 @@
+1.2.3.2
+	Fixed issue where missing PluginData directory was causing issues (log spam, no default file made)
+	Added code to prevent same directory from being specified 2x
+
 1.2.3.1
 	Fixed issue with bad path when trying to load extra cfg files
 

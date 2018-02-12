@@ -30,7 +30,7 @@ namespace LoadingScreenManager
     public class LoadingScreenManager : MonoBehaviour
     {
         internal static AssemblyLoader.LoadedAssembly TheChosenOne = null;
-        static bool first = true;
+        //static bool first = true;
 
 
         #region Nested Structs
@@ -150,7 +150,7 @@ namespace LoadingScreenManager
                     " won the election against\n" + candidates);
             }
 
-
+            Version = currentAssembly.GetName().Version.ToString();
 
         }
         public void Start()
@@ -390,10 +390,10 @@ namespace LoadingScreenManager
 
             foreach (var imageFolder in cfg._imageFolders)
             {
-                Log.Info("imageFolder: " + imageFolder.path);
+                Log.Info("imageFolder: " + imageFolder.Value.path);
 
-                var path = Path.Combine(dataPath, imageFolder.path).Replace('\\', '/');
-                var searchOption = imageFolder.ignoreSubfolders ? SearchOption.TopDirectoryOnly : SearchOption.AllDirectories;
+                var path = Path.Combine(dataPath, imageFolder.Value.path).Replace('\\', '/');
+                var searchOption = imageFolder.Value.ignoreSubfolders ? SearchOption.TopDirectoryOnly : SearchOption.AllDirectories;
 
                 try
                 {
@@ -402,7 +402,7 @@ namespace LoadingScreenManager
                     // All this does is split up the filemasks and then making the call for each of them with the appropriate
                     // file masks.  SelectMany just lets us do it all at once without having to use a loop.
 
-                    var l = imageFolder.fileMasks.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries)
+                    var l = imageFolder.Value.fileMasks.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries)
                         .SelectMany(fm => Directory.GetFiles(path, fm.Trim(), searchOption) ?? new string[0])
                         .Select(fn => fn.Replace('\\', '/'));
                     if (l != null)

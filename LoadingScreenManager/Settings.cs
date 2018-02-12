@@ -38,7 +38,7 @@ namespace LoadingScreenManager
 
         FileSelection fsDialog = null;
         Vector2 scrollPos;
-        int dialogEntry = -1;
+        string dialogEntry = null;
         bool fileMaskWin = false;
         string fileMask;
         bool deleteFlag;
@@ -169,7 +169,7 @@ namespace LoadingScreenManager
             fsDialog.Close();
             Destroy(fsDialog);
             fsDialog = null;
-            dialogEntry = -1;
+            dialogEntry = null;
         }
 
         void DialogWindow(int id)
@@ -186,12 +186,12 @@ namespace LoadingScreenManager
                 var imageFolder = cfg._imageFolders[dialogEntry];
                 imageFolder.fileMasks = fileMask;
                 cfg._imageFolders[dialogEntry] = imageFolder;
-                dialogEntry = -1;
+                dialogEntry = null;
                 fileMaskWin = false;
             }
             if (GUILayout.Button("Cancel"))
             {
-                dialogEntry = -1;
+                dialogEntry = null;
                 fileMaskWin = false;
             }
             GUILayout.EndHorizontal();
@@ -386,12 +386,12 @@ namespace LoadingScreenManager
                 if (cfg._tipsFile != "")
                     fsDialog.SetSelectedDirectory(Path.GetDirectoryName(cfg._tipsFile), false);
                 fsDialog.SetExtensions(".txt");
-                dialogEntry = 0;
+                dialogEntry = null;
                 fsDialog.startDialog();
             }
 
             if (fsDialog != null && fsDialog.done  && selectTipsFile &&
-                fsDialog.SelectedDirectory != null && fsDialog.SelectedFile != null && dialogEntry == 0)
+                fsDialog.SelectedDirectory != null && fsDialog.SelectedFile != null && dialogEntry == null)
             {
                 if (fsDialog.SelectedDirectory != "" || fsDialog.SelectedFile != "")
                 {
@@ -417,12 +417,12 @@ namespace LoadingScreenManager
                 if (cfg._logoScreen != "")
                     fsDialog.SetSelectedDirectory(Path.GetDirectoryName(cfg._logoScreen), false);
                 fsDialog.SetExtensions("*.png;*.jpg");
-                dialogEntry = 0;
+                dialogEntry = null;
                 fsDialog.startDialog();
             }
 
             if (fsDialog != null && fsDialog.done && selectLogoScreen && 
-                fsDialog.SelectedDirectory != null && fsDialog.SelectedFile != null && dialogEntry == 0)
+                fsDialog.SelectedDirectory != null && fsDialog.SelectedFile != null && dialogEntry == null)
             {
                 if (fsDialog.SelectedDirectory != "" || fsDialog.SelectedFile != "")
                 {
@@ -451,11 +451,11 @@ namespace LoadingScreenManager
                 if (fsDialog == null)
                     fsDialog = gameObject.AddComponent<FileSelection>();
                 fsDialog.SetSelectedDirectory(Path.GetDirectoryName(Config.DefaultPath), true);
-                dialogEntry = cfg._imageFolders.Count + 1;
+                //dialogEntry = cfg._imageFolders.;
                 fsDialog.startDialog();
             }
             if (fsDialog != null && fsDialog.done  &&
-                    fsDialog.SelectedDirectory != null && fsDialog.SelectedFile != null && dialogEntry == cfg._imageFolders.Count + 1)
+                    fsDialog.SelectedDirectory != null && fsDialog.SelectedFile != null && dialogEntry ==null)
             {
                 if (fsDialog.SelectedDirectory != "" && fsDialog.SelectedFile == "")
                 {
@@ -463,16 +463,18 @@ namespace LoadingScreenManager
                     imgFolder.path = StripRootPath(fsDialog.SelectedDirectory) + cfg.dirSeperator;
                     imgFolder.fileMasks = Config.DefaultFileMasks;
                     imgFolder.ignoreSubfolders = false;
-                    cfg._imageFolders.Add(imgFolder);
+                    if (!cfg._imageFolders.ContainsKey(imageFolder.path))
+                        cfg._imageFolders.Add(imgFolder.path, imgFolder);
                 }
                 closeFSDialog();
             }
             scrollPos = GUILayout.BeginScrollView(scrollPos);
             
             deleteFlag = false;
-            for (int i = 0; i < cfg._imageFolders.Count; i++)
+            //for (int i = 0; i < cfg._imageFolders.Count; i++)
+            foreach (var i in cfg._imageFolders)
             {
-                imageFolder = cfg._imageFolders[i];
+                imageFolder = i.Value; ;
 
                 GUILayout.BeginHorizontal();
 
@@ -481,7 +483,7 @@ namespace LoadingScreenManager
                     if (fsDialog == null)
                         fsDialog = gameObject.AddComponent<FileSelection>();
                     fsDialog.SetSelectedDirectory(Path.GetDirectoryName(imageFolder.path), true);
-                    dialogEntry = i + 1;
+                    //dialogEntry = i + 1;
                     fsDialog.startDialog();
                 }
                 // following for tooltip
@@ -495,17 +497,17 @@ namespace LoadingScreenManager
                 }
 
                 if (fsDialog != null && fsDialog.done == true &&
-                    fsDialog.SelectedDirectory != null && fsDialog.SelectedFile != null && dialogEntry == i + 1)
+                    fsDialog.SelectedDirectory != null && fsDialog.SelectedFile != null && dialogEntry == null)
                 {
                     if (fsDialog.SelectedDirectory != "" && fsDialog.SelectedFile == "")
                     {
                         imageFolder.path = StripRootPath(fsDialog.SelectedDirectory) + cfg.dirSeperator;
-                        cfg._imageFolders[i] = imageFolder;
+                        //cfg._imageFolders[i] = imageFolder;
                     }
                     fsDialog.Close();
                     Destroy(fsDialog);
                     fsDialog = null;
-                    dialogEntry = -1;
+                    dialogEntry = null;
                 }
 
                  buttonStyle = new GUIStyle(GUI.skin.button);
@@ -515,7 +517,7 @@ namespace LoadingScreenManager
                 size = GUI.skin.box.CalcSize(content);
                 if (GUILayout.Button("Masks", GUILayout.Width(size.x + buttonStyle.padding.left + buttonStyle.padding.right)))
                 {
-                    dialogEntry = i;
+                    dialogEntry = imageFolder.path; ;
                     fileMaskWin = true;
                     fileMask = string.Copy(imageFolder.fileMasks);
                 }
@@ -538,7 +540,7 @@ namespace LoadingScreenManager
                 if (GUILayout.Button("Sub", buttonStyle, GUILayout.Width(size.x + buttonStyle.padding.left + buttonStyle.padding.right)))
                 {
                     imageFolder.ignoreSubfolders = !imageFolder.ignoreSubfolders;
-                    cfg._imageFolders[i] = imageFolder;
+                    //cfg._imageFolders[i] = imageFolder;
                 }
 
                 if (GUILayout.Button("X", GUILayout.Width(20)))
@@ -550,7 +552,7 @@ namespace LoadingScreenManager
             }
             if (deleteFlag)
             {
-                cfg._imageFolders.Remove(deleteID);
+                cfg._imageFolders.Remove(deleteID.path);
             }
             GUILayout.EndScrollView();
 

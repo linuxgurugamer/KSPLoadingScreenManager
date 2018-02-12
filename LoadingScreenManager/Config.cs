@@ -48,7 +48,7 @@ namespace LoadingScreenManager
 
         #endregion
 
-        public readonly List<LoadingScreenManager.ImageFolder> _imageFolders = new List<LoadingScreenManager.ImageFolder>();
+        public readonly Dictionary<string, LoadingScreenManager.ImageFolder> _imageFolders = new Dictionary<string, LoadingScreenManager.ImageFolder>();
 
         public Config()
         {
@@ -207,6 +207,8 @@ namespace LoadingScreenManager
                 folderConfigNodes = new[] { folderConfigNode };
             }
 
+            // Saving the node here will ensure that the directory is created if it doesn't exist
+            SaveConfig(configNode);
             // Now read all other config files in the same location, look for FOLDER nodes
             string[] cfgFiles = Directory.GetFiles(ConfigFilePath,  "*.cfg");
             foreach (var f in cfgFiles)
@@ -242,6 +244,7 @@ namespace LoadingScreenManager
                     }
                 }
             }
+           
 
             // Translate the folder config nodes into a more convenient form.
             foreach (var folderConfigNode in folderConfigNodes)
@@ -251,9 +254,9 @@ namespace LoadingScreenManager
                 imageFolder.path = imageFolder.path.Replace(altSeperator, dirSeperator);
                 folderConfigNode.TryGetValue("fileMasks", ref imageFolder.fileMasks);
                 folderConfigNode.TryGetValue("ignoreSubfolders", ref imageFolder.ignoreSubfolders);
-                if (Directory.Exists(imageFolder.path))
+                if (Directory.Exists(imageFolder.path) && !this._imageFolders.ContainsKey(imageFolder.path))
                 {
-                    this._imageFolders.Add(imageFolder);
+                    this._imageFolders.Add(imageFolder.path, imageFolder);
                 }
             }
 
@@ -288,9 +291,9 @@ namespace LoadingScreenManager
             foreach (var imageFolder in this._imageFolders)
             {
                 var folderConfigNode = new ConfigNode("FOLDER");
-                folderConfigNode.AddValue("path", imageFolder.path.Replace("\\","/"));
-                folderConfigNode.AddValue("fileMasks", imageFolder.fileMasks);
-                folderConfigNode.AddValue("ignoreSubfolders", imageFolder.ignoreSubfolders);
+                folderConfigNode.AddValue("path", imageFolder.Value.path.Replace("\\","/"));
+                folderConfigNode.AddValue("fileMasks", imageFolder.Value.fileMasks);
+                folderConfigNode.AddValue("ignoreSubfolders", imageFolder.Value.ignoreSubfolders);
                 configNode.AddNode(folderConfigNode);
                 folderConfigNode = null;
             }
