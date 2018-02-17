@@ -379,16 +379,10 @@ namespace LoadingScreenManager
                 }
             }
         }
-
-        [NotNull]
-        private List<string> GetImageFilenames()
+        void GetFilenames(Dictionary<string, ImageFolder> list, ref List<string> filenames)
         {
-            var filenames = new List<string>();
             var dataPath = Path.GetDirectoryName(Application.dataPath) ?? "";
-
-            Log.Info("Finding image files...");
-
-            foreach (var imageFolder in cfg._imageFolders)
+            foreach (var imageFolder in list)
             {
                 Log.Info("imageFolder: " + imageFolder.Value.path);
 
@@ -407,10 +401,10 @@ namespace LoadingScreenManager
                         .Select(fn => fn.Replace('\\', '/'));
                     if (l != null)
                         filenames.AddRange(l);
-//                    filenames.AddRange(imageFolder.fileMasks.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries)
-//                        .SelectMany(fm => Directory.GetFiles(path, fm.Trim(), searchOption) ?? new string[0])
-//                        .Select(fn => fn.Replace('\\', '/'))
-//                        );
+                    //                    filenames.AddRange(imageFolder.fileMasks.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries)
+                    //                        .SelectMany(fm => Directory.GetFiles(path, fm.Trim(), searchOption) ?? new string[0])
+                    //                        .Select(fn => fn.Replace('\\', '/'))
+                    //                        );
                     Log.Info("... Added image path:  {0}", path);
                 }
                 catch (IOException ex)
@@ -418,6 +412,18 @@ namespace LoadingScreenManager
                     Log.Error("ERROR: Unable to access folder '{0}':  {1}", path, ex.Message);
                 }
             }
+        }
+        [NotNull]
+        private List<string> GetImageFilenames()
+        {
+            var filenames = new List<string>();
+            var dataPath = Path.GetDirectoryName(Application.dataPath) ?? "";
+
+            Log.Info("Finding image files...");
+            Log.Info("cfg._imageFolders");
+            GetFilenames(cfg._imageFolders, ref filenames);
+            Log.Info("cfg._addonImageFolders");
+            GetFilenames(cfg._addonImageFolders, ref filenames);
 
             if (cfg._debugLogging)
             {

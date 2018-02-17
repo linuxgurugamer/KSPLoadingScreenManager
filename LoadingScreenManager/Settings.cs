@@ -318,6 +318,7 @@ namespace LoadingScreenManager
 
             return firstPart + ellipsisChars + lastPart;
         }
+
         bool selectTipsFile = false;
         bool selectLogoScreen = false;
         private void InfoWindow(int id)
@@ -326,7 +327,7 @@ namespace LoadingScreenManager
             if (fsDialog != null && fsDialog.visible == true)
                 return;
             //GUI.enabled = false;
-
+            
             GUILayout.BeginVertical(GUILayout.Width(390));
             GUILayout.BeginHorizontal();
             cfg._debugLogging = GUILayout.Toggle(cfg._debugLogging, " Debug Logging");
@@ -401,6 +402,7 @@ namespace LoadingScreenManager
                 selectTipsFile = false;
             }
             GUILayout.Label(cfg._tipsFile, GUI.skin.textField);
+            
 
             GUILayout.FlexibleSpace();
             GUILayout.EndHorizontal();
@@ -436,7 +438,7 @@ namespace LoadingScreenManager
             GUILayout.FlexibleSpace();
             GUILayout.EndHorizontal();
             #endregion logoScreen
-#if true
+
             GUILayout.BeginHorizontal();
             GUILayout.Label("Enter Logo tip: ");
             //if (cfg._logoTip == null)
@@ -444,7 +446,8 @@ namespace LoadingScreenManager
             cfg._logoTip = GUILayout.TextField(cfg._logoTip);
             GUILayout.FlexibleSpace();
             GUILayout.EndHorizontal();
-#endif
+            
+
             GUILayout.Space(5);
             if (GUILayout.Button("Image Folders (click to add)"))
             {
@@ -454,27 +457,31 @@ namespace LoadingScreenManager
                 //dialogEntry = cfg._imageFolders.;
                 fsDialog.startDialog();
             }
+
             if (fsDialog != null && fsDialog.done  &&
                     fsDialog.SelectedDirectory != null && fsDialog.SelectedFile != null && dialogEntry ==null)
             {
                 if (fsDialog.SelectedDirectory != "" && fsDialog.SelectedFile == "")
-                {
+                {;
                     LoadingScreenManager.ImageFolder imgFolder = new LoadingScreenManager.ImageFolder();
                     imgFolder.path = StripRootPath(fsDialog.SelectedDirectory) + cfg.dirSeperator;
                     imgFolder.fileMasks = Config.DefaultFileMasks;
                     imgFolder.ignoreSubfolders = false;
-                    if (!cfg._imageFolders.ContainsKey(imageFolder.path))
+
+                    if (!cfg._imageFolders.ContainsKey(imgFolder.path))
                         cfg._imageFolders.Add(imgFolder.path, imgFolder);
                 }
                 closeFSDialog();
             }
+
             scrollPos = GUILayout.BeginScrollView(scrollPos);
             
             deleteFlag = false;
+            if (cfg._imageFolders != null && cfg._imageFolders.Count > 0)
             //for (int i = 0; i < cfg._imageFolders.Count; i++)
             foreach (var i in cfg._imageFolders)
             {
-                imageFolder = i.Value; ;
+                imageFolder = i.Value;
 
                 GUILayout.BeginHorizontal();
 
@@ -557,6 +564,7 @@ namespace LoadingScreenManager
             GUILayout.EndScrollView();
 
             GUILayout.BeginHorizontal();
+            toggleStyle = new GUIStyle(GUI.skin.toggle);
             toggleStyle.normal.textColor = Color.yellow;
             cfg._neverShowAgain = GUILayout.Toggle(cfg._neverShowAgain, " Never show again on toolbar", toggleStyle);
             GUILayout.EndHorizontal();
@@ -577,6 +585,7 @@ namespace LoadingScreenManager
                 GUIToggleToolbar(false);
 
             }
+
             GUILayout.EndHorizontal();
             GUI.enabled = true;
             GUILayout.EndVertical();

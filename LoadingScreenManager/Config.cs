@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using KSP.UI.Screens;
 using System.Collections.Generic;
 using UnityEngine;
@@ -43,12 +44,15 @@ namespace LoadingScreenManager
 
         public string _logoScreen = "";
         public List<string> logoScreens = new List<string>();
+        List<string> addonPaths = new List<string>();
         public string _logoTip = "";
         public List<string> logoTips = new List<string>();
 
         #endregion
 
         public readonly Dictionary<string, LoadingScreenManager.ImageFolder> _imageFolders = new Dictionary<string, LoadingScreenManager.ImageFolder>();
+        public readonly Dictionary<string, LoadingScreenManager.ImageFolder> _addonImageFolders = new Dictionary<string, LoadingScreenManager.ImageFolder>();
+
 
         public Config()
         {
@@ -94,7 +98,6 @@ namespace LoadingScreenManager
         {
             get
             {
-
                 string s = Path.Combine(Path.Combine(KSPUtil.ApplicationRootPath, ConfigFilePath), ConfigFileName).Replace('\\', '/');
                 Log.Info("configFilePath: " + s);
                 return s;
@@ -192,20 +195,8 @@ namespace LoadingScreenManager
                 configNode.TryGetValue("logoTip", ref this._logoTip);
                 logoTips.Add(this._logoTip ?? " ");
             }
-            var folderConfigNodes = configNode.GetNodes("FOLDER");
-
-            // If no folders defined, add a subnode for a default folder.
-            if (folderConfigNodes == null || folderConfigNodes.Length == 0)
-            {
-                var folderConfigNode = new ConfigNode("FOLDER");
-                // Use the prerelease setting, which will have the normal default if it's not found.
-                folderConfigNode.AddValue("path", screenshotFolder);
-                folderConfigNode.AddValue("fileMasks", DefaultFileMasks);
-                folderConfigNode.AddValue("ignoreSubfolders", default(bool));
-                configNode.AddNode(folderConfigNode);
-
-                folderConfigNodes = new[] { folderConfigNode };
-            }
+            ConfigNode[] folderConfigNodes = configNode.GetNodes("FOLDER");
+            List<ConfigNode> addOnFolderConfigNodes = new List<ConfigNode>();
 
             // Saving the node here will ensure that the directory is created if it doesn't exist
             SaveConfig(configNode);
@@ -224,6 +215,33 @@ namespace LoadingScreenManager
                     {
                         Log.Info("... File loaded: " + f1);
 
+                        // These values in the additional files override the std file
+                        float displayTime = -1;
+                        float fadeInTime = -1;
+                        float fadeOutTime = -1;
+                        float tipTime = -1;
+                        bool includeOriginalTips = true;
+                        bool neverShowAgain = false;
+
+
+                        loadedConfigNode.TryGetValue("displayTime", ref displayTime);
+                        loadedConfigNode.TryGetValue("fadeInTime", ref fadeInTime);
+                        loadedConfigNode.TryGetValue("fadeOutTime", ref fadeOutTime);
+                        loadedConfigNode.TryGetValue("tipTime", ref tipTime);
+                        loadedConfigNode.TryGetValue("includeOriginalTips", ref includeOriginalTips);
+                        loadedConfigNode.TryGetValue("neverShowAgain", ref neverShowAgain);
+
+                        if (displayTime > 0)
+                            this._displayTime = displayTime;
+                        if (fadeInTime > 0)
+                            this._fadeInTime = fadeInTime;
+                        if (fadeOutTime > 0)
+                            this._fadeOutTime = fadeOutTime;
+                        if (tipTime > 0)
+                            this._tipTime = tipTime;
+                        this._includeOriginalTips &= includeOriginalTips;
+                        this._neverShowAgain |= neverShowAgain;
+
                         // Need to save all the logo screens and logo tips into arrays
 
                         configNode.TryGetValue("logoScreen", ref this._logoScreen);
@@ -239,26 +257,33 @@ namespace LoadingScreenManager
                         if (loadedFolderConfigNodes != null)
                             foreach (var loadedFolderConfigNode in loadedFolderConfigNodes)
                             {
-                                configNode.AddNode(loadedFolderConfigNode);
+                                addOnFolderConfigNodes.Add(loadedFolderConfigNode);
                             }
                     }
                 }
             }
-           
+            if (addOnFolderConfigNodes.Count == 0)
+            {
+                // If no folders defined, add a subnode for a default folder.
+                if (folderConfigNodes == null || folderConfigNodes.Length == 0)
+                {
+                    var folderConfigNode = new ConfigNode("FOLDER");
+                    // Use the prerelease setting, which will have the normal default if it's not found.
+                    folderConfigNode.AddValue("path", screenshotFolder);
+                    folderConfigNode.AddValue("fileMasks", DefaultFileMasks);
+                    folderConfigNode.AddValue("ignoreSubfolders", default(bool));
+                    configNode.AddNode(folderConfigNode);
+
+                    folderConfigNodes = new[] { folderConfigNode };
+                }
+            }
+
 
             // Translate the folder config nodes into a more convenient form.
             foreach (var folderConfigNode in folderConfigNodes)
-            {
-                var imageFolder = new LoadingScreenManager.ImageFolder();
-                folderConfigNode.TryGetValue("path", ref imageFolder.path);
-                imageFolder.path = imageFolder.path.Replace(altSeperator, dirSeperator);
-                folderConfigNode.TryGetValue("fileMasks", ref imageFolder.fileMasks);
-                folderConfigNode.TryGetValue("ignoreSubfolders", ref imageFolder.ignoreSubfolders);
-                if (Directory.Exists(imageFolder.path) && !this._imageFolders.ContainsKey(imageFolder.path))
-                {
-                    this._imageFolders.Add(imageFolder.path, imageFolder);
-                }
-            }
+                TranslateFolderConfig(folderConfigNode);
+            foreach (var folderConfigNode in addOnFolderConfigNodes)
+                TranslateFolderConfig(folderConfigNode, true);
 
             // Remove legacy settings.
             configNode.RemoveValue("screenshotFolder");
@@ -266,6 +291,23 @@ namespace LoadingScreenManager
             configNode.RemoveValue("runWithNoScreenshots");
             SaveConfig(configNode);
         }
+
+        void TranslateFolderConfig(ConfigNode folderConfigNode, bool addon = false)
+        {
+            var imageFolder = new LoadingScreenManager.ImageFolder();
+            folderConfigNode.TryGetValue("path", ref imageFolder.path);
+            imageFolder.path = imageFolder.path.Replace(altSeperator, dirSeperator);
+            folderConfigNode.TryGetValue("fileMasks", ref imageFolder.fileMasks);
+            folderConfigNode.TryGetValue("ignoreSubfolders", ref imageFolder.ignoreSubfolders);
+            if (Directory.Exists(imageFolder.path) && !this._imageFolders.ContainsKey(imageFolder.path))
+            {
+                if (addon)
+                    this._addonImageFolders.Add(imageFolder.path, imageFolder);
+                else
+                    this._imageFolders.Add(imageFolder.path, imageFolder);
+            }
+        }
+
 
         public void SaveConfig()
         {

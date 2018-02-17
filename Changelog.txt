@@ -1,3 +1,14 @@
+1.2.3.3
+	Fixed issue with addon folders being added to std cfg
+	Added ability for addonconfig to override following settings in std config:
+		displayTime
+		fadeInTime
+		fadeOutTime
+		tipTime
+		includeOriginalTips
+		neverShowAgain
+	Deleted unnecessary file from release folder
+
 1.2.3.2
 	Fixed issue where missing PluginData directory was causing issues (log spam, no default file made)
 	Added code to prevent same directory from being specified 2x
