@@ -1,3 +1,8 @@
+1.2.3.4
+	Changed "totalSlides" to "maxSlides"
+	Added option to settings to allow LSM to autoadjust displayTime
+	Added displayTime autoadjust code
+
 1.2.3.3
 	Fixed issue with addon folders being added to std cfg
 	Added ability for addonconfig to override following settings in std config:

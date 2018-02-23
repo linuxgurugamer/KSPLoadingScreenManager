@@ -27,7 +27,7 @@ namespace LoadingScreenManager
         public bool _dumpTips;
         public bool _dumpScreens;
 
-        public int _totalSlides = 20;
+        public int _maxSlides = 20;
         public bool _includeOriginalScreens = true;
         public bool _forceSlideshowWithNoImageFiles;
 
@@ -39,6 +39,7 @@ namespace LoadingScreenManager
 
         public string _tipsFile = "";
         public bool _includeOriginalTips = true;
+        public bool _adjustDisplayTime = true;
 
         public bool _neverShowAgain = false;
 
@@ -124,7 +125,7 @@ namespace LoadingScreenManager
             configNode.AddValue("debugLogging", this._debugLogging);
             configNode.AddValue("dumpScreens", this._dumpScreens);
             configNode.AddValue("dumpTips", this._dumpTips);
-            configNode.AddValue("totalSlides", this._totalSlides);
+            configNode.AddValue("totalSlides", this._maxSlides);
             configNode.AddValue("includeOriginalScreens", this._includeOriginalScreens);
             configNode.AddValue("forceSlideshowWithNoImageFiles", this._forceSlideshowWithNoImageFiles);
             configNode.AddValue("displayTime", this._displayTime);
@@ -169,14 +170,14 @@ namespace LoadingScreenManager
 
             // Get legacy settings in case of old version, they will be upgraded.
             configNode.TryGetValue("screenshotFolder", ref screenshotFolder);
-            configNode.TryGetValue("slidesToAdd", ref this._totalSlides);
+            configNode.TryGetValue("slidesToAdd", ref this._maxSlides);
             configNode.TryGetValue("runWithNoScreenshots", ref this._forceSlideshowWithNoImageFiles);
 
             // Now pull out values.
             configNode.TryGetValue("debugLogging", ref this._debugLogging);
             configNode.TryGetValue("dumpScreens", ref this._dumpScreens);
             configNode.TryGetValue("dumpTips", ref this._dumpTips);
-            configNode.TryGetValue("totalSlides", ref this._totalSlides);
+            configNode.TryGetValue("totalSlides", ref this._maxSlides);
             configNode.TryGetValue("includeOriginalScreens", ref this._includeOriginalScreens);
             configNode.TryGetValue("forceSlideshowWithNoImageFiles", ref this._forceSlideshowWithNoImageFiles);
             configNode.TryGetValue("displayTime", ref this._displayTime);
@@ -187,6 +188,7 @@ namespace LoadingScreenManager
             this._tipsFile = this._tipsFile.Replace(altSeperator, dirSeperator);
             configNode.TryGetValue("includeOriginalTips", ref this._includeOriginalTips);
             configNode.TryGetValue("neverShowAgain", ref this._neverShowAgain);
+            configNode.TryGetValue("adjustDisplayTime", ref this._adjustDisplayTime);
 
             configNode.TryGetValue("logoScreen", ref this._logoScreen);
             if (this._logoScreen != null)
@@ -315,7 +317,7 @@ namespace LoadingScreenManager
             configNode.AddValue("debugLogging", this._debugLogging);
             configNode.AddValue("dumpScreens", this._dumpScreens);
             configNode.AddValue("dumpTips", this._dumpTips);
-            configNode.AddValue("totalSlides", this._totalSlides);
+            configNode.AddValue("totalSlides", this._maxSlides);
             configNode.AddValue("includeOriginalScreens", this._includeOriginalScreens);
             configNode.AddValue("forceSlideshowWithNoImageFiles", this._forceSlideshowWithNoImageFiles);
             configNode.AddValue("displayTime", this._displayTime);
@@ -325,6 +327,7 @@ namespace LoadingScreenManager
             configNode.AddValue("tipsFile", this._tipsFile.Replace("\\", "/"));
             configNode.AddValue("includeOriginalTips", this._includeOriginalTips);
             configNode.AddValue("neverShowAgain", this._neverShowAgain);
+            configNode.AddValue("adjustDisplayTime", this._adjustDisplayTime);
 
             configNode.AddValue("logoScreen", this._logoScreen);
             configNode.AddValue("logoTip", this._logoTip);

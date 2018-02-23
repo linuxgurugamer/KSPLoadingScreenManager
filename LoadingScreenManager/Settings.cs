@@ -345,8 +345,8 @@ namespace LoadingScreenManager
             GUILayout.EndHorizontal();
 
             GUILayout.BeginHorizontal();
-            GUILayout.Label("Total Slides:  " + cfg._totalSlides.ToString(), GUILayout.Width(150));
-            cfg._totalSlides = Mathf.RoundToInt(GUILayout.HorizontalSlider(cfg._totalSlides, 1, 100));
+            GUILayout.Label("Max Slides:  " + cfg._maxSlides.ToString(), GUILayout.Width(150));
+            cfg._maxSlides = Mathf.RoundToInt(GUILayout.HorizontalSlider(cfg._maxSlides, 1, 100));
             GUILayout.EndHorizontal();
 
             GUILayout.BeginHorizontal();
@@ -370,6 +370,10 @@ namespace LoadingScreenManager
 
             GUILayout.BeginHorizontal();
             cfg._includeOriginalTips = GUILayout.Toggle(cfg._includeOriginalTips, " Include Original Tips");
+            GUILayout.EndHorizontal();
+
+            GUILayout.BeginHorizontal();
+            cfg._adjustDisplayTime = GUILayout.Toggle(cfg._adjustDisplayTime, " Adjust Display Time every game start");
             GUILayout.EndHorizontal();
 
             //GUILayout.EndVertical();

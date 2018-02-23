@@ -153,18 +153,40 @@ namespace LoadingScreenManager
             Version = currentAssembly.GetName().Version.ToString();
 
         }
+
+        long startTime = 0, endTime = 0;
+        int  slideCount = 0;
         public void Start()
         {
             Log.Info("LoadingScreenManager {0} activated", Version);
 
+            startTime = DateTime.UtcNow.ToFileTimeUtc();
+
             //this.LoadConfig();
-            if (cfg._debugLogging) this.WriteStartupDebuggingInfo();
+            if (cfg._debugLogging) this.WriteStartupDebuggingInfo("Before");
             this.ModifyLoadingScreens();
+            //if (cfg._debugLogging) this.WriteStartupDebuggingInfo("After");
 
             Log.Info("LoadingScreenManager {0} finished", Version);
         }
-        void Update()
+        void LateUpdate()
         {
+            Log.Info("LoadingScreenManager.LateUpdate");
+
+            Log.Info("Finalizing displayTime adjustment");
+            endTime = DateTime.UtcNow.ToFileTimeUtc();
+
+            long loadingTime = endTime - startTime;
+
+            float displayTime = ((float)loadingTime / (float)slideCount) / 10000000;
+            Log.Info("startTime: " + startTime + ",  endtime: " + endTime + ", displayTime: " + displayTime);
+            if (displayTime - cfg._displayTime > 2)
+                ScreenMessages.PostScreenMessage("Loading Screen Manager adjusting displayTime", 10f);
+            cfg._displayTime = displayTime;
+            cfg.SaveConfig();
+        }
+        void Update()
+        { 
             if (HighLogic.LoadedScene == GameScenes.MAINMENU)
             {
                 Log.Info("LoadingScreenManager {0} destroyed", Version);
@@ -288,11 +310,12 @@ namespace LoadingScreenManager
 
             if (cfg._forceSlideshowWithNoImageFiles || imageFilenames.Count > 0)
             {
-                var newScreens = new List<LoadingScreen.LoadingScreenState>(cfg._totalSlides + 1);
+                var newScreens = new List<LoadingScreen.LoadingScreenState>(cfg._maxSlides + 1);
                 Texture2D texture;
                 string[] ltips = new string[1] ;
-                
+
                 // Add logo screens here
+                Log.Info("Adding logoscreens: " + cfg.logoScreens.Count);
                 for (int i = 0; i < cfg.logoScreens.Count; i++)
                 {
                     var s = cfg.logoScreens[i];
@@ -304,14 +327,19 @@ namespace LoadingScreenManager
                             AddScreen(newScreens, texture, ltips);
                     }
                 }
-
-                while (newScreens.Count < cfg._totalSlides && imageFilenames.Count > 0)
+                int cnt = 0;
+                while (newScreens.Count < cfg._maxSlides && imageFilenames.Count > 0)
                 {
-                    var filenameIndex = this._random.Next(imageFilenames.Count);
-                    var filename = imageFilenames[filenameIndex];
+                    string  filename;
+#if true
+                    int filenameIndex = this._random.Next(imageFilenames.Count);
+                    filename = imageFilenames[filenameIndex];
                     imageFilenames.RemoveAt(filenameIndex);
+#else
+                    filename = imageFilenames[cnt++];
+#endif
 
-                    
+
                     // A * in front of a filename denotes an original image (see above).
                     if (filename[0] == '*')
                     {
@@ -326,13 +354,14 @@ namespace LoadingScreenManager
                         if (!LoadImageFile(filename, out texture))
                             continue;
                     }
-
+                    texture.name = filename;
+                    Log.Info("Adding image: " + filename);
                     AddScreen(newScreens, texture, tips);
  
                 }
 
                 // Existing loaders are saved to be added at the end.  See below for why.
-                var existingLoaders = new List<LoadingSystem>(cfg._totalSlides + 1);
+                var existingLoaders = new List<LoadingSystem>(cfg._maxSlides + 1);
                 // ReSharper disable once LoopCanBeConvertedToQuery
                 for (var i = 0; i < LoadingScreen.Instance.loaders.Count; i++)
                 {
@@ -340,7 +369,7 @@ namespace LoadingScreenManager
                 }
                 var totalDummyLoaders = newScreens.Count - existingLoaders.Count;
 
-                var newLoaders = new List<LoadingSystem>(cfg._totalSlides + 1);
+                var newLoaders = new List<LoadingSystem>(cfg._maxSlides + 1);
                 for (var i = 0; i < totalDummyLoaders; i++)
                 {
                     newLoaders.Add(new DummyLoader());
@@ -370,13 +399,17 @@ namespace LoadingScreenManager
                     gameDatabaseIndex >= 0 ? " (including logo)" : "");
 
                 // Slide count.  The logo is not counted as a slide.
-                var slideCount = gameDatabaseIndex >= 0 ? newScreens.Count - 1 : newScreens.Count;
+                slideCount = gameDatabaseIndex >= 0 ? newScreens.Count - 1 : newScreens.Count;
                 Log.Info("{0} slides set", slideCount);
-                if (slideCount < cfg._totalSlides)
+                if (slideCount < cfg._maxSlides)
                 {
                     Log.Info("** WARNING:  Not enough images available ({0}) to meet requested number of slides ({1}).",
-                        slideCount, cfg._totalSlides);
+                        slideCount, cfg._maxSlides);
                 }
+#if DEBUG
+                for (int i = 0; i < slideCount; i++)
+                    Log.Info("Texture # : " + i + ", name: " + newScreens[i].screens[0].name);
+#endif
             }
         }
         void GetFilenames(Dictionary<string, ImageFolder> list, ref List<string> filenames)
@@ -420,9 +453,7 @@ namespace LoadingScreenManager
             var dataPath = Path.GetDirectoryName(Application.dataPath) ?? "";
 
             Log.Info("Finding image files...");
-            Log.Info("cfg._imageFolders");
             GetFilenames(cfg._imageFolders, ref filenames);
-            Log.Info("cfg._addonImageFolders");
             GetFilenames(cfg._addonImageFolders, ref filenames);
 
             if (cfg._debugLogging)
@@ -483,14 +514,27 @@ namespace LoadingScreenManager
         ///     This just avoids cluttering up the main logic method with a bunch of debug stuff.  Note this method also supports
         ///     the dumpScreens and dumpTips settings.
         /// </remarks>
-        private void WriteStartupDebuggingInfo()
+        private void WriteStartupDebuggingInfo(string when)
         {
             // See what loaders are setup.
+            Log.Debug("WriteStartupDebuggingInfo, " + when + " loading LSM screens");
             Log.Debug("{0} Loaders detected", LoadingScreen.Instance.loaders.Count);
             for (var i = 0; i < LoadingScreen.Instance.loaders.Count; i++)
             {
                 var loader = LoadingScreen.Instance.loaders[i];
-                Log.Debug(">> Loader #{0}: {1} - '{2}'", i + 1, loader.name, loader.ProgressTitle());
+                if (loader != null)
+                {
+                    string name = "(null)", title = "(null)";
+                    if (loader.name != null)
+                        name = loader.name;
+                    if (loader.ProgressTitle() != null)
+                        title = loader.ProgressTitle();
+
+                    Log.Debug(">> Loader #{0}: {1} - '{2}'", i , name, title);
+                } else
+                {
+                    Log.Debug(">> Loader #{0}:(null)", i );
+                }
             }
 
             // See what screens are provided.
@@ -499,17 +543,22 @@ namespace LoadingScreenManager
             {
                 var screen = LoadingScreen.Instance.Screens[i];
                 // Screens don't have names but their textures do, so we just use the index and dump the timings.
-                Log.Debug(">> Screen #{0}: dt={1} fi={2} fo={3} tt={4} ", i + 1, screen.displayTime,
-                    screen.fadeInTime, screen.fadeOutTime, screen.tipTime);
 
                 // Screen textures and tips are custom to each screen.
                 if (cfg._dumpScreens)
                 {
                     Log.Debug(">> >> Existing screen texture names:");
-                    foreach (var screenTexture in screen.screens)
+                    for (int i1 = 0; i1 < screen.screens.Count(); i1++)
                     {
-                        Log.Debug("{0}", screenTexture.name);
+                        Log.Debug("Screen #: {0}, Texture #: {1}, {2},  dt={3} fi={4} fo={5} tt={6}", i, i1, screen.screens[i1].name,
+                             screen.displayTime, screen.fadeInTime, screen.fadeOutTime, screen.tipTime);
                     }
+                }
+                else
+                {
+                    Log.Debug(">> Screen #{0}: dt={1} fi={2} fo={3} tt={4} ", i + 1, screen.displayTime,
+                        screen.fadeInTime, screen.fadeOutTime, screen.tipTime);
+
                 }
                 if (cfg._dumpTips)
                 {
