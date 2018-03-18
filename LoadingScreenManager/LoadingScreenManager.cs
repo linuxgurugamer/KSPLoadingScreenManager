@@ -327,7 +327,7 @@ namespace LoadingScreenManager
                             AddScreen(newScreens, texture, ltips);
                     }
                 }
-                int cnt = 0;
+                //int cnt = 0;
                 while (newScreens.Count < cfg._maxSlides && imageFilenames.Count > 0)
                 {
                     string  filename;

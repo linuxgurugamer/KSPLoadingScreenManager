@@ -1,3 +1,6 @@
+1.2.4
+	Recompiled for 1.4.1
+
 1.2.3.4
 	Changed "totalSlides" to "maxSlides"
 	Added option to settings to allow LSM to autoadjust displayTime
