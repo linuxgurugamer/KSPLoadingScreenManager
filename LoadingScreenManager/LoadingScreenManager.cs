@@ -8,6 +8,7 @@
 // ***************************************************************************
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -168,22 +169,32 @@ namespace LoadingScreenManager
             //if (cfg._debugLogging) this.WriteStartupDebuggingInfo("After");
 
             Log.Info("LoadingScreenManager {0} finished", Version);
+            if (cfg._adjustDisplayTime)
+                StartCoroutine(UpdateDisplayTime());
         }
-        void LateUpdate()
+        bool adjustMsg = false;
+        IEnumerator UpdateDisplayTime()
         {
-            Log.Info("LoadingScreenManager.LateUpdate");
+            while (true)            
+            {
+                yield return new WaitForSeconds(1);
+                Log.Info("LoadingScreenManager.LateUpdate");
 
-            Log.Info("Finalizing displayTime adjustment");
-            endTime = DateTime.UtcNow.ToFileTimeUtc();
+                Log.Info("Finalizing displayTime adjustment");
+                endTime = DateTime.UtcNow.ToFileTimeUtc();
 
-            long loadingTime = endTime - startTime;
+                long loadingTime = endTime - startTime;
 
-            float displayTime = ((float)loadingTime / (float)slideCount) / 10000000;
-            Log.Info("startTime: " + startTime + ",  endtime: " + endTime + ", displayTime: " + displayTime);
-            if (displayTime - cfg._displayTime > 2)
-                ScreenMessages.PostScreenMessage("Loading Screen Manager adjusting displayTime", 10f);
-            cfg._displayTime = displayTime;
-            cfg.SaveConfig();
+                float displayTime = ((float)loadingTime / (float)slideCount) / 10000000;
+                Log.Info("startTime: " + startTime + ",  endtime: " + endTime + ", displayTime: " + displayTime);
+                if (!adjustMsg && Math.Abs(displayTime - cfg._displayTime) > 2)
+                {
+                    ScreenMessages.PostScreenMessage("Loading Screen Manager adjusting displayTime", 10f);
+                    adjustMsg = false;
+                }
+                cfg._displayTime = displayTime;
+                cfg.SaveConfig();
+            }
         }
         void Update()
         { 

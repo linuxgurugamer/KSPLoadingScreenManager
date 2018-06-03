@@ -1,3 +1,7 @@
+1.2.5
+	Fixed option which disabled the auto-adjust
+	Fixed auto-adjust to properly change time
+
 1.2.4.1
 	Updated version info for 1.4.1-1.4.99
 
