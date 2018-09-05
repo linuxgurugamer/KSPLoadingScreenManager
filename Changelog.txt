@@ -1,10 +1,15 @@
-1.2.4.2
+
+1.2.5.1
 	Fixed Sub button (for controlling whether subdirectories are included)
 	Added tooltip to sub button
 	Added tooltip for X button
 	Adjusted position of tooltip for masks
 	Fixed hovor color for sub button
 	Removed unnecessary line from AssemblyVersion.tt:  <#@ assembly name="EnvDTE" #>
+
+1.2.5
+	Fixed option which disabled the auto-adjust
+	Fixed auto-adjust to properly change time
 
 1.2.4.1
 	Updated version info for 1.4.1-1.4.99

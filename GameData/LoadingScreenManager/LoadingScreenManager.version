@@ -10,8 +10,13 @@
   "VERSION": {
     "MAJOR": 1,
     "MINOR": 2,
+<<<<<<< HEAD
     "PATCH": 4,
     "BUILD": 2
+=======
+    "PATCH": 5,
+    "BUILD": 0
+>>>>>>> 894f14032aabe8b2b9291381733492f23552c1ae
   },
   "KSP_VERSION": {
     "MAJOR": 1,
