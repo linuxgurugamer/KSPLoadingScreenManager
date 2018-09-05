@@ -25,7 +25,7 @@ namespace LoadingScreenManager
 
         public static string TEXTURE_DIR = "LoadingScreenManager/" + "Textures/";
 
-        private static Texture2D LSM_button_img = new Texture2D(38, 38, TextureFormat.ARGB32, false);        
+        private static Texture2D LSM_button_img = new Texture2D(38, 38, TextureFormat.ARGB32, false);
         public static ApplicationLauncherButton LSM_Button = null;
         bool visible = false;
         private Rect infoBounds = new Rect(Screen.width / 2 - WIDTH / 2, Screen.height / 2 - HEIGHT / 2, WIDTH, HEIGHT);
@@ -34,7 +34,7 @@ namespace LoadingScreenManager
 
         Config cfg;
 
-       
+
 
         FileSelection fsDialog = null;
         Vector2 scrollPos;
@@ -42,6 +42,8 @@ namespace LoadingScreenManager
         bool fileMaskWin = false;
         string fileMask;
         bool deleteFlag;
+        bool updateFlag;
+        LoadingScreenManager.ImageFolder imgFolderToUpdate = new LoadingScreenManager.ImageFolder();
 
         // Vars here to avoid garbage collection
 
@@ -53,6 +55,7 @@ namespace LoadingScreenManager
 
         GUIContent content;
         Vector2 size;
+
 
         public void Start()
         {
@@ -131,9 +134,9 @@ namespace LoadingScreenManager
             //                tex.SaveToDisk("usermodified_window_bkg.png");
             //#endif
             // one of these apparently fixes the right thing
-           // window.onActive.background =
-           // window.onFocused.background =
-           // window.onNormal.background =
+            // window.onActive.background =
+            // window.onFocused.background =
+            // window.onNormal.background =
             //window.onHover.background =
             window.active.background =
             window.focused.background =
@@ -327,7 +330,7 @@ namespace LoadingScreenManager
             if (fsDialog != null && fsDialog.visible == true)
                 return;
             //GUI.enabled = false;
-            
+
             GUILayout.BeginVertical(GUILayout.Width(390));
             GUILayout.BeginHorizontal();
             cfg._debugLogging = GUILayout.Toggle(cfg._debugLogging, " Debug Logging");
@@ -354,7 +357,7 @@ namespace LoadingScreenManager
             cfg._displayTime = GUILayout.HorizontalSlider(cfg._displayTime, 1f, MAX_DISPLAYTIME);
             GUILayout.EndHorizontal();
 
-            GUILayout.BeginHorizontal();        
+            GUILayout.BeginHorizontal();
             GUILayout.Label("Fade in/out Time:  " + cfg._fadeInTime.ToString("F2"), GUILayout.Width(150));
             cfg._fadeInTime = GUILayout.HorizontalSlider(cfg._fadeInTime, 0f, MAX_FADETIME);
             GUILayout.EndHorizontal();
@@ -395,7 +398,7 @@ namespace LoadingScreenManager
                 fsDialog.startDialog();
             }
 
-            if (fsDialog != null && fsDialog.done  && selectTipsFile &&
+            if (fsDialog != null && fsDialog.done && selectTipsFile &&
                 fsDialog.SelectedDirectory != null && fsDialog.SelectedFile != null && dialogEntry == null)
             {
                 if (fsDialog.SelectedDirectory != "" || fsDialog.SelectedFile != "")
@@ -406,7 +409,7 @@ namespace LoadingScreenManager
                 selectTipsFile = false;
             }
             GUILayout.Label(cfg._tipsFile, GUI.skin.textField);
-            
+
 
             GUILayout.FlexibleSpace();
             GUILayout.EndHorizontal();
@@ -427,7 +430,7 @@ namespace LoadingScreenManager
                 fsDialog.startDialog();
             }
 
-            if (fsDialog != null && fsDialog.done && selectLogoScreen && 
+            if (fsDialog != null && fsDialog.done && selectLogoScreen &&
                 fsDialog.SelectedDirectory != null && fsDialog.SelectedFile != null && dialogEntry == null)
             {
                 if (fsDialog.SelectedDirectory != "" || fsDialog.SelectedFile != "")
@@ -446,11 +449,11 @@ namespace LoadingScreenManager
             GUILayout.BeginHorizontal();
             GUILayout.Label("Enter Logo tip: ");
             //if (cfg._logoTip == null)
-                //cfg._logoTip = "";
+            //cfg._logoTip = "";
             cfg._logoTip = GUILayout.TextField(cfg._logoTip);
             GUILayout.FlexibleSpace();
             GUILayout.EndHorizontal();
-            
+
 
             GUILayout.Space(5);
             if (GUILayout.Button("Image Folders (click to add)"))
@@ -462,16 +465,16 @@ namespace LoadingScreenManager
                 fsDialog.startDialog();
             }
 
-            if (fsDialog != null && fsDialog.done  &&
-                    fsDialog.SelectedDirectory != null && fsDialog.SelectedFile != null && dialogEntry ==null)
+            if (fsDialog != null && fsDialog.done &&
+                    fsDialog.SelectedDirectory != null && fsDialog.SelectedFile != null && dialogEntry == null)
             {
                 if (fsDialog.SelectedDirectory != "" && fsDialog.SelectedFile == "")
-                {;
+                {
+                    ;
                     LoadingScreenManager.ImageFolder imgFolder = new LoadingScreenManager.ImageFolder();
                     imgFolder.path = StripRootPath(fsDialog.SelectedDirectory) + cfg.dirSeperator;
                     imgFolder.fileMasks = Config.DefaultFileMasks;
                     imgFolder.ignoreSubfolders = false;
-
                     if (!cfg._imageFolders.ContainsKey(imgFolder.path))
                         cfg._imageFolders.Add(imgFolder.path, imgFolder);
                 }
@@ -479,91 +482,128 @@ namespace LoadingScreenManager
             }
 
             scrollPos = GUILayout.BeginScrollView(scrollPos);
-            
+
             deleteFlag = false;
+            updateFlag = false;
+
+
+
             if (cfg._imageFolders != null && cfg._imageFolders.Count > 0)
-            //for (int i = 0; i < cfg._imageFolders.Count; i++)
-            foreach (var i in cfg._imageFolders)
-            {
-                imageFolder = i.Value;
-
-                GUILayout.BeginHorizontal();
-
-                if (GUILayout.Button(ShortenPath(imageFolder.path,37)))
+                //for (int i = 0; i < cfg._imageFolders.Count; i++)
+                foreach (var i in cfg._imageFolders)
                 {
-                    if (fsDialog == null)
-                        fsDialog = gameObject.AddComponent<FileSelection>();
-                    fsDialog.SetSelectedDirectory(Path.GetDirectoryName(imageFolder.path), true);
-                    //dialogEntry = i + 1;
-                    fsDialog.startDialog();
-                }
-                // following for tooltip
-                if (Event.current.type == EventType.Repaint && GUILayoutUtility.GetLastRect().Contains(Event.current.mousePosition))
-                {
-                    Vector2 s = GUI.skin.box.CalcSize(new GUIContent(imageFolder.path));
-                    var rect = new Rect(Event.current.mousePosition.x + 10, Event.current.mousePosition.y + 10, s.x, s.y);
+                    imageFolder = i.Value;
 
-                    GUI.tooltip = imageFolder.path;
-                    GUI.Box(rect, GUI.tooltip);
-                }
+                    GUILayout.BeginHorizontal();
 
-                if (fsDialog != null && fsDialog.done == true &&
-                    fsDialog.SelectedDirectory != null && fsDialog.SelectedFile != null && dialogEntry == null)
-                {
-                    if (fsDialog.SelectedDirectory != "" && fsDialog.SelectedFile == "")
+                    if (GUILayout.Button(ShortenPath(imageFolder.path, 37)))
                     {
-                        imageFolder.path = StripRootPath(fsDialog.SelectedDirectory) + cfg.dirSeperator;
-                        //cfg._imageFolders[i] = imageFolder;
+                        if (fsDialog == null)
+                            fsDialog = gameObject.AddComponent<FileSelection>();
+                        fsDialog.SetSelectedDirectory(Path.GetDirectoryName(imageFolder.path), true);
+                        //dialogEntry = i + 1;
+                        fsDialog.startDialog();
                     }
-                    fsDialog.Close();
-                    Destroy(fsDialog);
-                    fsDialog = null;
-                    dialogEntry = null;
-                }
+                    // following for tooltip
+                    if (Event.current.type == EventType.Repaint && GUILayoutUtility.GetLastRect().Contains(Event.current.mousePosition))
+                    {
+                        Vector2 s = GUI.skin.box.CalcSize(new GUIContent(imageFolder.path));
+                        var rect = new Rect(Event.current.mousePosition.x + 10, Event.current.mousePosition.y + 10, s.x, s.y);
 
-                 buttonStyle = new GUIStyle(GUI.skin.button);
-                 toggleStyle = new GUIStyle(GUI.skin.toggle);
+                        GUI.tooltip = imageFolder.path;
+                        GUI.Box(rect, GUI.tooltip);
+                    }
 
-                content = new GUIContent("Masks");
-                size = GUI.skin.box.CalcSize(content);
-                if (GUILayout.Button("Masks", GUILayout.Width(size.x + buttonStyle.padding.left + buttonStyle.padding.right)))
-                {
-                    dialogEntry = imageFolder.path; ;
-                    fileMaskWin = true;
-                    fileMask = string.Copy(imageFolder.fileMasks);
-                }
-                // Following for tooltip
-                if (Event.current.type == EventType.Repaint && GUILayoutUtility.GetLastRect().Contains(Event.current.mousePosition))
-                {
-                    Vector2 s = GUI.skin.box.CalcSize(new GUIContent(imageFolder.fileMasks));
-                    var rect = new Rect(Event.current.mousePosition.x + 10, Event.current.mousePosition.y + 10, s.x, s.y);
+                    if (fsDialog != null && fsDialog.done == true &&
+                        fsDialog.SelectedDirectory != null && fsDialog.SelectedFile != null && dialogEntry == null)
+                    {
+                        if (fsDialog.SelectedDirectory != "" && fsDialog.SelectedFile == "")
+                        {
+                            imageFolder.path = StripRootPath(fsDialog.SelectedDirectory) + cfg.dirSeperator;
+                            //cfg._imageFolders[i] = imageFolder;
+                        }
+                        fsDialog.Close();
+                        Destroy(fsDialog);
+                        fsDialog = null;
+                        dialogEntry = null;
+                    }
 
-                    GUI.tooltip = imageFolder.fileMasks;
-                    GUI.Box(rect, GUI.tooltip);
-                }
-                if (imageFolder.ignoreSubfolders)
-                    buttonStyle.normal.textColor = Color.red;
-                else
-                    buttonStyle.normal.textColor = Color.green;
+                    buttonStyle = new GUIStyle(GUI.skin.button);
+                    toggleStyle = new GUIStyle(GUI.skin.toggle);
 
-                content = new GUIContent("Sub");
-                size = GUI.skin.box.CalcSize(content);
-                if (GUILayout.Button("Sub", buttonStyle, GUILayout.Width(size.x + buttonStyle.padding.left + buttonStyle.padding.right)))
-                {
-                    imageFolder.ignoreSubfolders = !imageFolder.ignoreSubfolders;
-                    //cfg._imageFolders[i] = imageFolder;
-                }
+                    content = new GUIContent("Masks");
+                    size = GUI.skin.box.CalcSize(content);
+                    if (GUILayout.Button("Masks", GUILayout.Width(size.x + buttonStyle.padding.left + buttonStyle.padding.right)))
+                    {
+                        dialogEntry = imageFolder.path;
+                        fileMaskWin = true;
+                        fileMask = string.Copy(imageFolder.fileMasks);
+                    }
+                    // Following for tooltip
+                    if (Event.current.type == EventType.Repaint && GUILayoutUtility.GetLastRect().Contains(Event.current.mousePosition))
+                    {
+                        Vector2 s = GUI.skin.box.CalcSize(new GUIContent(imageFolder.fileMasks));
+                        var rect = new Rect(Event.current.mousePosition.x + 10 - s.x / 2, Event.current.mousePosition.y + 10, s.x, s.y);
 
-                if (GUILayout.Button("X", GUILayout.Width(20)))
-                {
-                    deleteID = imageFolder;
-                    deleteFlag = true;
+                        GUI.tooltip = imageFolder.fileMasks;
+                        GUI.Box(rect, GUI.tooltip);
+                    }
+                    if (imageFolder.ignoreSubfolders)
+                    {
+                        buttonStyle.hover.textColor =
+                            buttonStyle.normal.textColor = Color.red;
+                    }
+                    else
+                    {
+                        buttonStyle.hover.textColor =
+                            buttonStyle.normal.textColor = Color.green;
+                    }
+                    content = new GUIContent("Sub");
+                    size = GUI.skin.box.CalcSize(content);
+                    if (GUILayout.Button("Sub", buttonStyle, GUILayout.Width(size.x + buttonStyle.padding.left + buttonStyle.padding.right)))
+                    {
+                        imageFolder.ignoreSubfolders = !imageFolder.ignoreSubfolders;
+                        Log.Info("ignoreSubFolders changed: " + imageFolder.ignoreSubfolders);
+                        imgFolderToUpdate = imageFolder;
+                        updateFlag = true;
+                    }
+                    // Following for tooltip
+                    if (Event.current.type == EventType.Repaint && GUILayoutUtility.GetLastRect().Contains(Event.current.mousePosition))
+                    {
+                        if (imageFolder.ignoreSubfolders)
+                           GUI.tooltip = "Red = ignore subfolders";
+                        else
+                            GUI.tooltip = "Green = include subfolders";
+
+                        Vector2 s = GUI.skin.box.CalcSize(new GUIContent(GUI.tooltip));
+                        var rect = new Rect(Event.current.mousePosition.x - s.x, Event.current.mousePosition.y + 10, s.x, s.y);
+
+                        GUI.Box(rect, GUI.tooltip);
+                    }
+                    if (GUILayout.Button("X", GUILayout.Width(20)))
+                    {
+                        deleteID = imageFolder;
+                        deleteFlag = true;
+                    }
+                    // Following for tooltip
+                    if (Event.current.type == EventType.Repaint && GUILayoutUtility.GetLastRect().Contains(Event.current.mousePosition))
+                    {
+                        GUI.tooltip = "Delete this line";
+                        Vector2 s = GUI.skin.box.CalcSize(new GUIContent(GUI.tooltip));
+                        var rect = new Rect(Event.current.mousePosition.x - s.x, Event.current.mousePosition.y + 10, s.x, s.y);
+
+                        GUI.Box(rect, GUI.tooltip);
+                    }
+                    GUILayout.EndHorizontal();
                 }
-                GUILayout.EndHorizontal();
-            }
             if (deleteFlag)
             {
                 cfg._imageFolders.Remove(deleteID.path);
+            }
+            if (updateFlag)
+            {
+                cfg._imageFolders[imgFolderToUpdate.path] = imgFolderToUpdate;
+
             }
             GUILayout.EndScrollView();
 
