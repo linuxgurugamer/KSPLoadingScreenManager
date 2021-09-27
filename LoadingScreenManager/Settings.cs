@@ -12,6 +12,7 @@ namespace LoadingScreenManager
     [KSPAddon(KSPAddon.Startup.MainMenu, false)]
     class Settings : MonoBehaviour
     {
+        static Settings Instance;
         const float MAX_FADETIME = 10f;
         const float MAX_DISPLAYTIME = 10f;
         const float MAX_TIPTIME = 10f;
@@ -26,7 +27,7 @@ namespace LoadingScreenManager
         public static string TEXTURE_DIR = "LoadingScreenManager/" + "Textures/";
 
         private static Texture2D LSM_button_img = new Texture2D(38, 38, TextureFormat.ARGB32, false);
-        public static ApplicationLauncherButton LSM_Button = null;
+        //public static ApplicationLauncherButton LSM_Button = null;
         bool visible = false;
         private Rect infoBounds = new Rect(Screen.width / 2 - WIDTH / 2, Screen.height / 2 - HEIGHT / 2, WIDTH, HEIGHT);
 
@@ -59,13 +60,15 @@ namespace LoadingScreenManager
 
         public void Start()
         {
+            Instance = this;
+
             if (!GameDatabase.Instance.IsReady() || ApplicationLauncher.Instance == null)
                 return;
             cfg = new Config();
             if (cfg._neverShowAgain)
                 return;
 
-
+#if false
             if (LSM_Button == null)
             {
                 LSM_Button = ApplicationLauncher.Instance.AddModApplication(GUIToggleToolbar, GUIToggleToolbar,
@@ -74,6 +77,7 @@ namespace LoadingScreenManager
                         ApplicationLauncher.AppScenes.MAINMENU,
                         GameDatabase.Instance.GetTexture(TEXTURE_DIR + "LoadingScreenManager-38", false));
             }
+#endif
         }
         private void FixedUpdate()
         {
@@ -83,6 +87,7 @@ namespace LoadingScreenManager
         }
         private void OnDestroy()
         {
+#if false
             if (LSM_Button != null)
             {
                 Debug.Log("OnDestroy, destroying button");
@@ -90,6 +95,7 @@ namespace LoadingScreenManager
                 ApplicationLauncher.Instance.RemoveModApplication(LSM_Button);
                 LSM_Button = null;
             }
+#endif
         }
 
         public void GUIToggleToolbar(bool saveConfig)
@@ -97,12 +103,23 @@ namespace LoadingScreenManager
             visible = !visible;
             if (!visible && saveConfig)
                 cfg.SaveConfig();
+            if (visible)
+                SpaceLink.lockEverything();
+            else
+                SpaceLink.unlockEverything();
         }
 
-        public void GUIToggleToolbar()
+        static public void GUIToggleToolbar()
         {
-            GUIToggleToolbar(true);
+            if (Instance != null)
+            {
+                if (!Instance.visible)
+                    Instance.GUIToggleToolbar(true);
+            }
         }
+
+
+
 
         public void OnGUI()
         {
@@ -382,7 +399,7 @@ namespace LoadingScreenManager
             //GUILayout.EndVertical();
             //GUILayout.BeginVertical(GUILayout.Width(390));
 
-            #region TipsFile
+#region TipsFile
 
             GUILayout.BeginHorizontal();
             if (GUILayout.Button("Tips File:"))
@@ -413,9 +430,9 @@ namespace LoadingScreenManager
 
             GUILayout.FlexibleSpace();
             GUILayout.EndHorizontal();
-            #endregion Tipsfile
+#endregion Tipsfile
 
-            #region logoScreen
+#region logoScreen
             GUILayout.BeginHorizontal();
             if (GUILayout.Button("Logo Screen:"))
             {
@@ -444,7 +461,7 @@ namespace LoadingScreenManager
 
             GUILayout.FlexibleSpace();
             GUILayout.EndHorizontal();
-            #endregion logoScreen
+#endregion logoScreen
 
             GUILayout.BeginHorizontal();
             GUILayout.Label("Enter Logo tip: ");
@@ -610,7 +627,7 @@ namespace LoadingScreenManager
             GUILayout.BeginHorizontal();
             toggleStyle = new GUIStyle(GUI.skin.toggle);
             toggleStyle.normal.textColor = Color.yellow;
-            cfg._neverShowAgain = GUILayout.Toggle(cfg._neverShowAgain, " Never show again on toolbar", toggleStyle);
+            cfg._neverShowAgain = GUILayout.Toggle(cfg._neverShowAgain, " Never show again on Main Menu", toggleStyle);
             GUILayout.EndHorizontal();
             GUILayout.Space(10);
             GUILayout.BeginHorizontal();

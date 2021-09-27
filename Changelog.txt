@@ -1,3 +1,14 @@
+ChangeLog
+
+1.2.7
+	Added AssemblyFileVersion
+	Updated version file for 1.12
+	Updated mod for 1.12
+	Removed Toolbar code
+	Added code to replace line for mod web site with link to load settings page
+	Added code to lock main menu while settings window is open
+
+	
 1.2.5.2
 	Version bump for 1.5 rebuild
 

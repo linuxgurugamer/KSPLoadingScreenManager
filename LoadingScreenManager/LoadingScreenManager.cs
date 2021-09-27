@@ -33,7 +33,6 @@ namespace LoadingScreenManager
         internal static AssemblyLoader.LoadedAssembly TheChosenOne = null;
         //static bool first = true;
 
-
         #region Nested Structs
 
         /// <summary>
@@ -90,7 +89,7 @@ namespace LoadingScreenManager
         private readonly Random _random = new Random();
   #endregion
 
-        Config cfg = new Config();
+        internal static Config cfg = new Config();
 
         #region Public Methods
 
@@ -282,7 +281,7 @@ namespace LoadingScreenManager
                 gameDatabaseIndex = LoadingScreen.Instance.loaders.FindIndex(l => l is GameDatabase);
                 if (gameDatabaseIndex >= 0)
                 {
-                    if (gameDatabaseIndex != 0) Log.Warning("** WARNING - Game Database Loader is not where expected.");
+                    if (gameDatabaseIndex != 1) Log.Warning("** WARNING - Game Database Loader is not where expected (" + gameDatabaseIndex + ")");
                     gameDatabaseLoader = LoadingScreen.Instance.loaders[gameDatabaseIndex];
                     gameDatabaseScreen = LoadingScreen.Instance.Screens[gameDatabaseIndex];
                 }
@@ -297,8 +296,9 @@ namespace LoadingScreenManager
                 // can't be at index 0 is if the GameDatabase is (which is actually the norm).
                 if (LoadingScreen.Instance.loaders.Count > 1 || gameDatabaseIndex < 0)
                 {
-                    var firstModifiableIndex = gameDatabaseIndex == 0 ? 1 : 0;
+                    var firstModifiableIndex = gameDatabaseIndex == 1 ? 2 : 0;
                     firstModifiableScreen = LoadingScreen.Instance.Screens[firstModifiableIndex];
+                    Log.Info("firstModifiableIndex: " + firstModifiableIndex);
                 }
                 if (firstModifiableScreen == null) Log.Warning("** WARNING - No existing modifiable loaders.");
             }
@@ -316,8 +316,11 @@ namespace LoadingScreenManager
                 {
                     // Identify original by indexes, with a * in front so we know they can't be filenames.
                     imageFilenames.Add($"*{i}");
+                    Log.Info("Adding index: " + $"*{i}");
                 }
             }
+
+            Log.Info("imageFilenames.Count: " + imageFilenames.Count);
 
             if (cfg._forceSlideshowWithNoImageFiles || imageFilenames.Count > 0)
             {
@@ -338,6 +341,7 @@ namespace LoadingScreenManager
                             AddScreen(newScreens, texture, ltips);
                     }
                 }
+
                 //int cnt = 0;
                 while (newScreens.Count < cfg._maxSlides && imageFilenames.Count > 0)
                 {
