@@ -12,6 +12,7 @@ namespace LoadingScreenManager
     public class Config
     {
         public const string DefaultPath = "Screenshots/";
+        public const string DefaultPath2 = "UserLoadingScreens/";
         private const string ConfigFilePath = "GameData/LoadingScreenManager/PluginData/";
         private const string ConfigFileName = "LoadingScreenManager.cfg";
         private const string LogMessageFormat = "[LSM] {0}";
@@ -114,7 +115,7 @@ namespace LoadingScreenManager
         private void LoadConfig()
         {
             // Use the PlugInData path that KSP has earmarked for this DLL.
-            
+
             Log.Info("Loading configuration file:  {0}", configFilePath);
 
             // Settings from prerelease that's changed in structure.
@@ -142,7 +143,7 @@ namespace LoadingScreenManager
             // The advantage of doing it this way is that at the end we always end up with a full config file that can be saved,
             // which is handy for version upgrades or if the user has deleted settings.
             ConfigNode loadedConfigNode = ConfigNode.Load(oldConfigFilePath);
-            
+
             if (loadedConfigNode != null)
             {
                 Log.Info("... Old config loaded");
@@ -197,18 +198,18 @@ namespace LoadingScreenManager
                 configNode.TryGetValue("logoTip", ref this._logoTip);
                 logoTips.Add(this._logoTip ?? " ");
             }
-            ConfigNode[] folderConfigNodes = configNode.GetNodes("FOLDER");
+            List<ConfigNode> folderConfigNodes = configNode.GetNodes("FOLDER").ToList(); ;
             List<ConfigNode> addOnFolderConfigNodes = new List<ConfigNode>();
 
             // Saving the node here will ensure that the directory is created if it doesn't exist
             SaveConfig(configNode);
             // Now read all other config files in the same location, look for FOLDER nodes
-            string[] cfgFiles = Directory.GetFiles(ConfigFilePath,  "*.cfg");
+            string[] cfgFiles = Directory.GetFiles(ConfigFilePath, "*.cfg");
             foreach (var f in cfgFiles)
             {
                 // don't reprocess the same config file again
                 var f1 = ExtraCfgFilePath(f);
-                if  (f1 != configFilePath)
+                if (f1 != configFilePath)
                 {
                     Log.Info("extra files: " + f1);
                     Log.Info("configFilePath: " + configFilePath);
@@ -267,7 +268,7 @@ namespace LoadingScreenManager
             if (addOnFolderConfigNodes.Count == 0)
             {
                 // If no folders defined, add a subnode for a default folder.
-                if (folderConfigNodes == null || folderConfigNodes.Length == 0)
+                if (folderConfigNodes == null || folderConfigNodes.Count == 0)
                 {
                     var folderConfigNode = new ConfigNode("FOLDER");
                     // Use the prerelease setting, which will have the normal default if it's not found.
@@ -276,7 +277,16 @@ namespace LoadingScreenManager
                     folderConfigNode.AddValue("ignoreSubfolders", default(bool));
                     configNode.AddNode(folderConfigNode);
 
-                    folderConfigNodes = new[] { folderConfigNode };
+                    folderConfigNodes.Add(folderConfigNode);
+
+                    folderConfigNode = new ConfigNode("FOLDER");
+                    // Use the prerelease setting, which will have the normal default if it's not found.
+                    folderConfigNode.AddValue("path", DefaultPath2);
+                    folderConfigNode.AddValue("fileMasks", DefaultFileMasks);
+                    folderConfigNode.AddValue("ignoreSubfolders", default(bool));
+                    configNode.AddNode(folderConfigNode);
+                    folderConfigNodes.Add(folderConfigNode);
+
                 }
             }
 
@@ -336,13 +346,13 @@ namespace LoadingScreenManager
             foreach (var imageFolder in this._imageFolders)
             {
                 var folderConfigNode = new ConfigNode("FOLDER");
-                folderConfigNode.AddValue("path", imageFolder.Value.path.Replace("\\","/"));
+                folderConfigNode.AddValue("path", imageFolder.Value.path.Replace("\\", "/"));
                 folderConfigNode.AddValue("fileMasks", imageFolder.Value.fileMasks);
                 folderConfigNode.AddValue("ignoreSubfolders", imageFolder.Value.ignoreSubfolders);
                 configNode.AddNode(folderConfigNode);
                 folderConfigNode = null;
             }
-           
+
             SaveConfig(configNode);
         }
 

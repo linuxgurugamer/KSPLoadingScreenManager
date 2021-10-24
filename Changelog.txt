@@ -1,5 +1,8 @@
 ChangeLog
 
+1.2.8
+	Added UserLoadingScreens as a second default folder
+
 1.2.7
 	Added AssemblyFileVersion
 	Updated version file for 1.12
