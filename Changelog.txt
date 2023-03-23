@@ -1,5 +1,8 @@
 ChangeLog
 
+1.2.8.1
+	Fixed config file path for instances when game is not loaded as expected (it:  new launcher)
+
 1.2.8
 	Added UserLoadingScreens as a second default folder
 

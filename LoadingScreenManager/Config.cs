@@ -204,7 +204,7 @@ namespace LoadingScreenManager
             // Saving the node here will ensure that the directory is created if it doesn't exist
             SaveConfig(configNode);
             // Now read all other config files in the same location, look for FOLDER nodes
-            string[] cfgFiles = Directory.GetFiles(ConfigFilePath, "*.cfg");
+            string[] cfgFiles = Directory.GetFiles(configFilePath, "*.cfg");
             foreach (var f in cfgFiles)
             {
                 // don't reprocess the same config file again
