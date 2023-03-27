@@ -117,7 +117,16 @@ namespace LoadingScreenManager
             // Use the PlugInData path that KSP has earmarked for this DLL.
 
             Log.Info("Loading configuration file:  {0}", configFilePath);
+            if (!System.IO.Directory.Exists(Path.Combine(KSPUtil.ApplicationRootPath, ConfigFilePath)))
+            {
+                System.IO.Directory.CreateDirectory(Path.Combine(KSPUtil.ApplicationRootPath, ConfigFilePath));
 
+                return;
+            }
+            if (!System.IO.File.Exists(configFilePath))
+            {
+                return;
+            }
             // Settings from prerelease that's changed in structure.
             var screenshotFolder = DefaultPath;
 
@@ -204,9 +213,10 @@ namespace LoadingScreenManager
             // Saving the node here will ensure that the directory is created if it doesn't exist
             SaveConfig(configNode);
             // Now read all other config files in the same location, look for FOLDER nodes
-            string[] cfgFiles = Directory.GetFiles(configFilePath, "*.cfg");
+            string[] cfgFiles = Directory.GetFiles(Path.Combine(KSPUtil.ApplicationRootPath, ConfigFilePath), "*.cfg");
             foreach (var f in cfgFiles)
             {
+
                 // don't reprocess the same config file again
                 var f1 = ExtraCfgFilePath(f);
                 if (f1 != configFilePath)
@@ -265,6 +275,8 @@ namespace LoadingScreenManager
                     }
                 }
             }
+            Log.Info("Test 3");
+
             if (addOnFolderConfigNodes.Count == 0)
             {
                 // If no folders defined, add a subnode for a default folder.
@@ -302,6 +314,7 @@ namespace LoadingScreenManager
             configNode.RemoveValue("slidesToAdd");
             configNode.RemoveValue("runWithNoScreenshots");
             SaveConfig(configNode);
+            Log.Info("Test 9");
         }
 
         void TranslateFolderConfig(ConfigNode folderConfigNode, bool addon = false)

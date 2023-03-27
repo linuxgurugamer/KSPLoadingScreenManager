@@ -1,5 +1,9 @@
 ChangeLog
 
+1.2.8.2
+	Fixed path of PluginData
+	Added code to create LoadingScreenManager/PluginData if not there
+
 1.2.8.1
 	Fixed config file path for instances when game is not loaded as expected (it:  new launcher)
 
