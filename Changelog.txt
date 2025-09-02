@@ -1,5 +1,9 @@
 ChangeLog
 
+1.2.8.3
+	Updated version file to use github for new version info
+	Added option to settings for randomization, defaults to true, but if set false will show sequentially
+
 1.2.8.2
 	Fixed path of PluginData
 	Added code to create LoadingScreenManager/PluginData if not there

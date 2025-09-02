@@ -7,15 +7,15 @@
 // NOTE: This mod contains ReSharper annotation attributes (which luckily UnityEngine exposes, so it saves providing a file).
 // ***************************************************************************
 
+using JetBrains.Annotations;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using JetBrains.Annotations;
+using System.Reflection;
 using UnityEngine;
 using Random = System.Random;
-using System.Reflection;
 
 
 namespace LoadingScreenManager
@@ -80,14 +80,14 @@ namespace LoadingScreenManager
         #endregion
         #region Constants
 
-        private string Version; 
+        private string Version;
 
         #endregion
 
         #region Configuration Fields
 
         private readonly Random _random = new Random();
-  #endregion
+        #endregion
 
         internal static Config cfg = new Config();
 
@@ -155,7 +155,7 @@ namespace LoadingScreenManager
         }
 
         long startTime = 0, endTime = 0;
-        int  slideCount = 0;
+        int slideCount = 0;
         public void Start()
         {
             Log.Info("LoadingScreenManager {0} activated", Version);
@@ -174,7 +174,7 @@ namespace LoadingScreenManager
         bool adjustMsg = false;
         IEnumerator UpdateDisplayTime()
         {
-            while (true)            
+            while (true)
             {
                 yield return new WaitForSeconds(1);
                 Log.Info("LoadingScreenManager.LateUpdate");
@@ -196,16 +196,16 @@ namespace LoadingScreenManager
             }
         }
         void Update()
-        { 
+        {
             if (HighLogic.LoadedScene == GameScenes.MAINMENU)
             {
                 Log.Info("LoadingScreenManager {0} destroyed", Version);
                 DestroyImmediate(this);
             }
         }
-#endregion
+        #endregion
 
-#region Private Methods
+        #region Private Methods
 
         bool LoadImageFile(string filename, out Texture2D texture)
         {
@@ -227,7 +227,7 @@ namespace LoadingScreenManager
             }
             return true;
         }
-        void AddScreen(List<LoadingScreen.LoadingScreenState>  newScreens, Texture2D texture, string[] tips)
+        void AddScreen(List<LoadingScreen.LoadingScreenState> newScreens, Texture2D texture, string[] tips)
         {
             // All normal loading screens (except the logo of course) get rebuilt to use the timings and images.
             // The default on the main screen is 40 minutes, so if we didn't do this the slideshow wouldn't work!
@@ -326,7 +326,7 @@ namespace LoadingScreenManager
             {
                 var newScreens = new List<LoadingScreen.LoadingScreenState>(cfg._maxSlides + 1);
                 Texture2D texture;
-                string[] ltips = new string[1] ;
+                string[] ltips = new string[1];
 
                 // Add logo screens here
                 Log.Info("Adding logoscreens: " + cfg.logoScreens.Count);
@@ -342,17 +342,20 @@ namespace LoadingScreenManager
                     }
                 }
 
-                //int cnt = 0;
                 while (newScreens.Count < cfg._maxSlides && imageFilenames.Count > 0)
                 {
-                    string  filename;
-#if true
-                    int filenameIndex = this._random.Next(imageFilenames.Count);
-                    filename = imageFilenames[filenameIndex];
-                    imageFilenames.RemoveAt(filenameIndex);
-#else
-                    filename = imageFilenames[cnt++];
-#endif
+                    string filename;
+                    if (cfg.randomize)
+                    {
+                        int filenameIndex = this._random.Next(imageFilenames.Count);
+                        filename = imageFilenames[filenameIndex];
+                        imageFilenames.RemoveAt(filenameIndex);
+                    }
+                    else
+                    {
+                        filename = imageFilenames[0];
+                        imageFilenames.RemoveAt(0);
+                    }
 
 
                     // A * in front of a filename denotes an original image (see above).
@@ -372,7 +375,7 @@ namespace LoadingScreenManager
                     texture.name = filename;
                     Log.Info("Adding image: " + filename);
                     AddScreen(newScreens, texture, tips);
- 
+
                 }
 
                 // Existing loaders are saved to be added at the end.  See below for why.
@@ -408,9 +411,9 @@ namespace LoadingScreenManager
                 LoadingScreen.Instance.Screens = newScreens;
 
                 // Raw counts for debugging.
-                Log.Info("{0} loaders set{1}", newLoaders.Count, 
+                Log.Info("{0} loaders set{1}", newLoaders.Count,
                     gameDatabaseIndex >= 0 ? " (including GameDatabase)" : "");
-                Log.Info("{0} raw screens set{1}", newScreens.Count, 
+                Log.Info("{0} raw screens set{1}", newScreens.Count,
                     gameDatabaseIndex >= 0 ? " (including logo)" : "");
 
                 // Slide count.  The logo is not counted as a slide.
@@ -545,10 +548,11 @@ namespace LoadingScreenManager
                     if (loader.ProgressTitle() != null)
                         title = loader.ProgressTitle();
 
-                    Log.Debug(">> Loader #{0}: {1} - '{2}'", i , name, title);
-                } else
+                    Log.Debug(">> Loader #{0}: {1} - '{2}'", i, name, title);
+                }
+                else
                 {
-                    Log.Debug(">> Loader #{0}:(null)", i );
+                    Log.Debug(">> Loader #{0}:(null)", i);
                 }
             }
 
@@ -608,6 +612,6 @@ namespace LoadingScreenManager
             if (cfg._debugLogging) Debug.LogFormat(this, string.Format(LogMessageFormat, format), args);
         }
 #endif
-#endregion
+        #endregion
     }
 }

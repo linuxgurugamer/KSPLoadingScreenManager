@@ -37,6 +37,7 @@ namespace LoadingScreenManager
         public float _fadeInTime = 0.5f;
         public float _fadeOutTime = 0.5f;
         public float _tipTime = 5.0f;
+        public bool randomize = true;
 
         public string _tipsFile = "";
         public bool _includeOriginalTips = true;
@@ -143,6 +144,7 @@ namespace LoadingScreenManager
             configNode.AddValue("fadeOutTime", this._fadeOutTime);
             configNode.AddValue("tipTime", this._tipTime);
             configNode.AddValue("tipsFile", this._tipsFile);
+            configNode.AddValue("randomize", this.randomize);
             configNode.AddValue("includeOriginalTips", this._includeOriginalTips);
             configNode.AddValue("neverShowAgain", this._neverShowAgain);
 
@@ -193,6 +195,7 @@ namespace LoadingScreenManager
             configNode.TryGetValue("displayTime", ref this._displayTime);
             configNode.TryGetValue("fadeInTime", ref this._fadeInTime);
             configNode.TryGetValue("fadeOutTime", ref this._fadeOutTime);
+            configNode.TryGetValue("randomize", ref this.randomize);
             configNode.TryGetValue("tipTime", ref this._tipTime);
             configNode.TryGetValue("tipsFile", ref this._tipsFile);
             this._tipsFile = this._tipsFile.Replace(altSeperator, dirSeperator);
@@ -346,6 +349,7 @@ namespace LoadingScreenManager
             configNode.AddValue("displayTime", this._displayTime);
             configNode.AddValue("fadeInTime", this._fadeInTime);
             configNode.AddValue("fadeOutTime", this._fadeOutTime);
+            configNode.AddValue("randomize", this.randomize);
             configNode.AddValue("tipTime", this._tipTime);
             configNode.AddValue("tipsFile", this._tipsFile.Replace("\\", "/"));
             configNode.AddValue("includeOriginalTips", this._includeOriginalTips);
